@@ -989,7 +989,16 @@ body.light-mode .toast { color: #1a2744 !important; }
   <!-- Mobile header -->
   <div class="mobile-header" id="mobileHeader">
     <div class="mobile-header-title" style="font-size:17px;gap:10px;">⚠️ مخالفات القدية</div>
-    <button class="hamburger-btn" onclick="toggleSidebar()">☰</button>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="hamburger-btn" id="mobileNotifBtn" onclick="showTab('notifications');closeSidebar();" style="font-size:16px;position:relative;" title="الإشعارات">
+        🔔
+        <span id="mobileNotifBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--red);color:white;border-radius:10px;padding:1px 5px;font-size:8px;font-weight:900;"></span>
+      </button>
+      <button class="hamburger-btn" onclick="logout()" style="font-size:16px;background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#f87171;" title="تسجيل الخروج">
+        🚪
+      </button>
+      <button class="hamburger-btn" onclick="toggleSidebar()">☰</button>
+    </div>
   </div>
 
   <!-- Mobile bottom navigation -->
@@ -1456,7 +1465,7 @@ const SUPERVISOR_CODES = {
     "AB-2026": "Group A&B",
     "QDY-ADMIN-2026": "admin"
 };
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwJDoE5xfe07eIOnJ0ft1Wb6iMUsm7WZTvGYVr3pYnoj1yiuhb0APjgwEl1uIW-YnACpw/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxkRWtY80EgmAo3p3TvNDX7KxiOjWuF-GyjdR6w_ZLCDCoKSzyWlyoxGbqE5ariOALL/exec';
 
 const allUsers = {
     "ADMIN": { name: "مراقب النظام — Admin", password: "Qdy#9471@Admin", role: "admin" },
@@ -3047,6 +3056,9 @@ function submitViolation() {
   // إشعار واتساب
   sendWANotification(violation);
 
+  // إرسال مباشر إلى Google Sheets عند التسجيل
+  sendToGoogleSheets(violation);
+
   document.getElementById('refNumber').textContent = refNumber;
   document.getElementById('successMsg').style.display = 'block';
   showToast('✅ تم تسجيل المخالفة بنجاح!');
@@ -3313,7 +3325,7 @@ async function generatePDF(violation){
   // A4 width = 794px at 96dpi. تصميم ضمن هذا العرض.
   el.style.cssText = [
     'position:fixed','left:-9999px','top:0',
-    'width:794px','padding:16px 18px',
+    'width:794px','padding:20px 24px',
     'background:#070e1c',
     'font-family:Arial,Helvetica,sans-serif',
     'color:#dde4f0','direction:rtl',
@@ -3345,11 +3357,11 @@ async function generatePDF(violation){
     <div style="height:1px;background:linear-gradient(90deg,transparent,#d4af37,transparent);margin-bottom:10px;"></div>
 
     <!-- ═══ FIELDS GRID ═══ -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px;">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px;">
       ${fields.map(([lbl,val])=>`
-        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(212,175,55,0.18);border-radius:6px;padding:5px 7px;">
-          <div style="color:#d4af37;font-size:8px;font-weight:700;margin-bottom:2px;">${lbl}</div>
-          <div style="color:#fff;font-size:10px;font-weight:600;word-break:break-word;">${val||'—'}</div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(212,175,55,0.18);border-radius:6px;padding:6px 8px;">
+          <div style="color:#d4af37;font-size:9px;font-weight:700;margin-bottom:2px;">${lbl}</div>
+          <div style="color:#fff;font-size:11px;font-weight:600;word-break:break-word;">${val||'—'}</div>
         </div>`).join('')}
 
       ${mapsLink ? `
@@ -3369,11 +3381,11 @@ async function generatePDF(violation){
     ${imgs.length ? `
     <div style="margin-bottom:10px;">
       <div style="font-size:9px;font-weight:700;color:#d4af37;margin-bottom:5px;border-right:3px solid #d4af37;padding-right:6px;">📸 صور المخالفة (${imgs.length})</div>
-      <div style="display:grid;grid-template-columns:${imgs.length===1?'1fr':imgs.length===2?'1fr 1fr':imgs.length<=4?'repeat(4,1fr)':'repeat(3,1fr)'};gap:5px;">
+      <div style="display:grid;grid-template-columns:${imgs.length===1?'1fr':imgs.length===2?'1fr 1fr':imgs.length<=4?'repeat(4,1fr)':'repeat(3,1fr)'};gap:6px;">
         ${imgs.map((src,i)=>`
           <div style="position:relative;">
-            <img src="${src}" style="width:100%;height:${imgs.length===1?'160px':'90px'};object-fit:cover;border-radius:5px;border:1px solid rgba(212,175,55,0.35);display:block;">
-            <div style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,0.6);color:#d4af37;font-size:7px;padding:1px 4px;border-radius:3px;">صورة ${i+1}</div>
+            <img src="${src}" style="width:100%;height:${imgs.length===1?'200px':'110px'};object-fit:cover;border-radius:5px;border:1px solid rgba(212,175,55,0.35);display:block;">
+            <div style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,0.6);color:#d4af37;font-size:8px;padding:1px 5px;border-radius:3px;">صورة ${i+1}</div>
           </div>`
         ).join('')}
       </div>
@@ -3459,12 +3471,41 @@ async function generatePDF(violation){
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const pageW = 210, pageH = 297;
+    const margin = 5;
+    const usableW = pageW - (margin * 2);
+    const usableH = pageH - (margin * 2);
 
-    // نحسب الارتفاع الفعلي ونضغطه إذا تجاوز A4
-    const contentH = (canvas.height / canvas.width) * pageW;
-    const finalH = Math.min(contentH, pageH);
+    // حساب الارتفاع الفعلي بناء على العرض
+    const imgW = canvas.width;
+    const imgH = canvas.height;
+    const contentH = (imgH / imgW) * usableW;
 
-    doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, pageW, finalH);
+    if (contentH <= usableH) {
+      // المحتوى يتناسب مع صفحة واحدة - بدون ضغط
+      doc.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', margin, margin, usableW, contentH);
+    } else {
+      // المحتوى أطول من صفحة واحدة — نقسمه على عدة صفحات
+      const totalPages = Math.ceil(contentH / usableH);
+      for (let page = 0; page < totalPages; page++) {
+        if (page > 0) doc.addPage();
+
+        // نحسب أي جزء من الصورة نقص
+        const srcY = Math.round((page * usableH / contentH) * imgH);
+        const srcH = Math.round((usableH / contentH) * imgH);
+        const actualSrcH = Math.min(srcH, imgH - srcY);
+
+        // ننشئ canvas مؤقت لهذا الجزء
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = imgW;
+        pageCanvas.height = actualSrcH;
+        const ctx = pageCanvas.getContext('2d');
+        ctx.drawImage(canvas, 0, srcY, imgW, actualSrcH, 0, 0, imgW, actualSrcH);
+
+        const pageContentH = (actualSrcH / imgW) * usableW;
+        doc.addImage(pageCanvas.toDataURL('image/jpeg', 0.95), 'JPEG', margin, margin, usableW, pageContentH);
+      }
+    }
+
     doc.save(`violation_${violation.refNumber}.pdf`);
     showToast('✅ تم إنشاء PDF بنجاح!');
   } catch(err) {
@@ -3721,13 +3762,43 @@ async function sendToGoogleSheets(v){
       reviewTime:        v.reviewTime || '-',
       reviewNotes:       v.reviewNotes || '-'
     };
-    await fetch(GOOGLE_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(sheetData)
-    });
-    console.log('✅ تم الإرسال إلى Google Sheets:', v.refNumber);
+
+    // Method 1: Try fetch with redirect follow
+    try {
+      const resp = await fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(sheetData)
+      });
+      console.log('✅ تم الإرسال إلى Google Sheets (fetch):', v.refNumber);
+    } catch(fetchErr) {
+      // Method 2: Fallback using form submission via hidden iframe
+      console.warn('⚠️ fetch failed, trying form fallback...', fetchErr);
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = GOOGLE_SCRIPT_URL;
+      form.target = 'gs_iframe';
+      form.style.display = 'none';
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'data';
+      input.value = JSON.stringify(sheetData);
+      form.appendChild(input);
+      // Create hidden iframe if not exists
+      let iframe = document.getElementById('gs_iframe');
+      if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = 'gs_iframe';
+        iframe.name = 'gs_iframe';
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+      }
+      document.body.appendChild(form);
+      form.submit();
+      setTimeout(() => form.remove(), 3000);
+      console.log('✅ تم الإرسال إلى Google Sheets (form fallback):', v.refNumber);
+    }
   } catch(e) {
     console.error('❌ خطأ في Google Sheets:', e);
   }
