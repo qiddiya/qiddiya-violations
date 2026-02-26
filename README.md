@@ -1,1 +1,4433 @@
-# qiddiya-violations
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام مخالفات القدية</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-light: #ffd700;
+  --gold-dim: rgba(212,175,55,0.15);
+  --dark: #060d1a;
+  --dark2: #0d1b2a;
+  --dark3: #112240;
+  --card: rgba(17,34,64,0.8);
+  --border: rgba(212,175,55,0.2);
+  --text: #e2e8f0;
+  --muted: rgba(255,255,255,0.45);
+  --green: #10b981;
+  --red: #ef4444;
+  --amber: #f59e0b;
+  --radius: 16px;
+
+  /* light mode overrides (inactive by default) */
+  --bg-body: #060d1a;
+  --bg-sidebar: rgba(13,27,42,0.98);
+  --bg-card: rgba(17,34,64,0.8);
+  --text-main: #e2e8f0;
+  --text-muted: rgba(255,255,255,0.45);
+  --border-color: rgba(212,175,55,0.2);
+  --input-bg: rgba(255,255,255,0.06);
+  --input-text: #e2e8f0;
+  --mesh1: rgba(212,175,55,0.06);
+  --mesh2: rgba(16,185,129,0.04);
+}
+
+/* ═══════════════════════════════
+   LIGHT MODE
+   ═══════════════════════════════ */
+body.light-mode {
+  --dark: #f0f4f8;
+  --dark2: #e2e8f0;
+  --dark3: #d1dce8;
+  --card: rgba(255,255,255,0.92);
+  --border: rgba(180,145,20,0.3);
+  --text: #1a2744;
+  --muted: rgba(30,50,90,0.5);
+  --gold-dim: rgba(212,175,55,0.12);
+  --bg-body: #eef2f8;
+  --bg-sidebar: rgba(250,252,255,0.98);
+  --bg-card: rgba(255,255,255,0.92);
+  --text-main: #1a2744;
+  --text-muted: rgba(30,50,90,0.5);
+  --border-color: rgba(180,145,20,0.25);
+  --input-bg: rgba(0,0,0,0.04);
+  --input-text: #1a2744;
+  --mesh1: rgba(212,175,55,0.04);
+  --mesh2: rgba(16,185,129,0.02);
+}
+
+body.light-mode body::before {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 10%, var(--mesh1) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, var(--mesh2) 0%, transparent 60%);
+}
+
+body.light-mode .sidebar {
+  background: linear-gradient(180deg, rgba(250,252,255,0.99) 0%, rgba(240,244,250,0.99) 100%);
+  border-left-color: var(--border);
+  box-shadow: -4px 0 20px rgba(0,0,0,0.08);
+}
+body.light-mode .nav-item { color: rgba(30,50,90,0.6); }
+body.light-mode .nav-item:hover { background: rgba(212,175,55,0.1); color: #1a2744; }
+body.light-mode .nav-item.active { color: #8b6914; background: rgba(212,175,55,0.15); }
+body.light-mode .card {
+  background: rgba(255,255,255,0.92);
+  border-color: rgba(180,145,20,0.2);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+body.light-mode .card-header h3 { color: #1a2744; }
+body.light-mode .stat-card {
+  background: rgba(255,255,255,0.9);
+  border-color: rgba(180,145,20,0.2);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.07);
+}
+body.light-mode .form-input,
+body.light-mode .form-select,
+body.light-mode .form-textarea {
+  background: rgba(0,0,0,0.04);
+  border-color: rgba(180,145,20,0.25);
+  color: #1a2744;
+}
+body.light-mode .form-select option { background: #f5f7fa; color: #1a2744; }
+body.light-mode .form-input::placeholder { color: rgba(30,50,90,0.4); }
+body.light-mode .form-input:focus,
+body.light-mode .form-select:focus { background: rgba(212,175,55,0.05); border-color: var(--gold); }
+body.light-mode .plate-input { background: rgba(0,0,0,0.04); border-color: rgba(180,145,20,0.25); }
+body.light-mode .company-trigger { background: rgba(0,0,0,0.04); border-color: rgba(180,145,20,0.25); color: #1a2744; }
+body.light-mode .company-dropdown { background: #f8fafc; border-color: var(--gold); }
+body.light-mode .company-search-input { background: rgba(0,0,0,0.04); color: #1a2744; }
+body.light-mode .company-option { color: #1a2744; }
+body.light-mode .v-card { background: rgba(255,255,255,0.92); border-color: rgba(180,145,20,0.2); }
+body.light-mode .v-card-header { border-bottom-color: rgba(180,145,20,0.15); }
+body.light-mode .v-detail strong { color: #8b6914; }
+body.light-mode .v-detail { color: #1a2744; border-color: rgba(0,0,0,0.05); }
+body.light-mode .filter-select, body.light-mode .filter-input {
+  background: rgba(0,0,0,0.04); border-color: rgba(180,145,20,0.25); color: #1a2744;
+}
+body.light-mode .filter-select option { background: #f5f7fa; }
+body.light-mode .report-table th { background: rgba(212,175,55,0.15); }
+body.light-mode .report-table td { color: #1a2744; border-color: rgba(0,0,0,0.06); }
+body.light-mode .report-table tr:nth-child(even) td { background: rgba(0,0,0,0.02); }
+body.light-mode .top-list li { border-color: rgba(0,0,0,0.06); }
+body.light-mode .top-name { color: #1a2744; }
+body.light-mode .map-btn { background: rgba(212,175,55,0.12); border-color: rgba(180,145,20,0.25); }
+body.light-mode .upload-btn { background: rgba(212,175,55,0.1); border-color: rgba(180,145,20,0.3); }
+body.light-mode .mobile-header { background: rgba(248,250,252,0.98); border-bottom-color: rgba(180,145,20,0.2); }
+body.light-mode .btn-logout { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.2); }
+body.light-mode .wa-settings { background: rgba(37,211,102,0.06); border-color: rgba(37,211,102,0.2); }
+body.light-mode .login-card { background: rgba(255,255,255,0.95); border-color: rgba(180,145,20,0.25); }
+body.light-mode .form-label { color: #8b6914; }
+body.light-mode .page-subtitle { color: rgba(30,50,90,0.5); }
+body.light-mode .stat-label { color: rgba(30,50,90,0.55); }
+body.light-mode .dl-btn { background: rgba(0,0,0,0.04); border-color: rgba(180,145,20,0.25); color: #8b6914; }
+body.light-mode .mobile-bottom-nav { background: rgba(250,252,255,0.98); border-top-color: rgba(180,145,20,0.2); }
+body.light-mode .bottom-nav-item { color: rgba(30,50,90,0.5); }
+body.light-mode .bottom-nav-item.active { color: #8b6914; }
+
+/* ═══ Theme Toggle Button ═══ */
+.theme-toggle-btn {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--gold-dim);
+  border: 1px solid var(--border);
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Tajawal', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  transition: all 0.2s;
+}
+.theme-toggle-btn:hover { background: rgba(212,175,55,0.25); }
+body.light-mode .theme-toggle-btn { background: rgba(0,0,0,0.04); border-color: rgba(180,145,20,0.25); color: #8b6914; }
+
+/* ═══ Theme Toggle Pill (floating) ═══ */
+.theme-pill {
+  position: fixed; top: 16px; left: 16px; z-index: 9999;
+  display: flex; align-items: center; gap: 6px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 30px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-family: 'Tajawal', sans-serif;
+  font-size: 13px; font-weight: 700;
+  color: var(--gold);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  transition: all 0.3s;
+  backdrop-filter: blur(20px);
+}
+.theme-pill:hover { transform: scale(1.05); }
+body.light-mode .theme-pill { background: rgba(255,255,255,0.95); color: #8b6914; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Tajawal', sans-serif;
+  background: var(--dark);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* ── Background mesh ── */
+body::before {
+  content:'';
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 10%, rgba(212,175,55,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(16,185,129,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 100% 80% at 50% 50%, rgba(6,13,26,0) 0%, var(--dark) 100%);
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  position: fixed; top:0; right:0; bottom:0;
+  width: 260px; z-index:100;
+  background: linear-gradient(180deg, rgba(13,27,42,0.98) 0%, rgba(6,13,26,0.98) 100%);
+  border-left: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  backdrop-filter: blur(20px);
+  transition: transform 0.3s ease;
+}
+.sidebar-logo {
+  padding: 28px 24px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-logo .logo-icon {
+  width:48px; height:48px; border-radius:12px;
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px; margin-bottom:10px;
+}
+.sidebar-logo h2 {
+  font-size:15px; font-weight:900; color:var(--gold-light);
+  line-height:1.3;
+}
+.sidebar-logo p { font-size:11px; color:var(--muted); margin-top:3px; }
+
+.sidebar-user {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  display:flex; align-items:center; gap:12px;
+}
+.user-avatar {
+  width:38px; height:38px; border-radius:10px;
+  background: var(--gold-dim); border:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; flex-shrink:0;
+}
+.user-info { flex:1; min-width:0; }
+.user-name { font-size:13px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.user-role { font-size:11px; color:var(--gold); }
+
+.sidebar-nav { flex:1; padding:16px 12px; overflow-y:auto; }
+.nav-item {
+  display:flex; align-items:center; gap:12px;
+  padding:12px 14px; border-radius:12px; cursor:pointer;
+  color:var(--muted); font-size:14px; font-weight:500;
+  transition:all 0.2s; margin-bottom:4px;
+  border: 1px solid transparent;
+}
+.nav-item:hover { background:var(--gold-dim); color:var(--text); }
+.nav-item.active {
+  background: linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.05));
+  color:var(--gold-light); border-color:var(--border); font-weight:700;
+}
+.nav-item .nav-icon { font-size:18px; width:24px; text-align:center; }
+.nav-badge {
+  margin-right:auto; background:var(--gold); color:var(--dark);
+  border-radius:20px; padding:2px 8px; font-size:11px; font-weight:900;
+}
+
+.sidebar-footer {
+  padding:16px 12px;
+  border-top: 1px solid var(--border);
+}
+.btn-logout {
+  width:100%; padding:11px; border-radius:12px;
+  background: rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3);
+  color:#fca5a5; font-size:13px; font-weight:700; cursor:pointer;
+  font-family:'Tajawal',sans-serif; transition:all 0.2s;
+}
+.btn-logout:hover { background:rgba(239,68,68,0.2); }
+
+/* ── Main content ── */
+.main {
+  margin-left: 0;
+  margin-right: 260px;
+  min-height: 100vh;
+  padding: 28px;
+  position: relative; z-index:1;
+}
+
+/* ── Page header ── */
+.page-header {
+  margin-bottom:28px;
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;
+}
+.page-title { font-size:24px; font-weight:900; color:var(--gold-light); }
+.page-subtitle { font-size:13px; color:var(--muted); margin-top:3px; }
+
+/* ── Cards ── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  backdrop-filter: blur(20px);
+  overflow: hidden;
+}
+.card-header {
+  padding:20px 24px 16px;
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:12px;
+}
+.card-header h3 { font-size:16px; font-weight:700; color:var(--text); }
+.card-body { padding:24px; }
+
+/* ── Stat cards ── */
+.stats-row {
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:16px;
+  margin-bottom:24px;
+}
+.stat-card {
+  background: var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:20px;
+  position:relative; overflow:hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.stat-card:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(0,0,0,0.3); }
+.stat-card::before {
+  content:''; position:absolute; inset:0;
+  background: linear-gradient(135deg, var(--accent-color,rgba(212,175,55,0.08)) 0%, transparent 60%);
+}
+.stat-card.gold  { --accent-color: rgba(212,175,55,0.12); }
+.stat-card.green { --accent-color: rgba(16,185,129,0.12); }
+.stat-card.red   { --accent-color: rgba(239,68,68,0.10); }
+.stat-card.amber { --accent-color: rgba(245,158,11,0.10); }
+.stat-card.blue  { --accent-color: rgba(59,130,246,0.10); }
+
+.stat-icon {
+  width:42px; height:42px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center; font-size:20px;
+  margin-bottom:12px;
+}
+.stat-card.gold  .stat-icon { background:rgba(212,175,55,0.15); }
+.stat-card.green .stat-icon { background:rgba(16,185,129,0.15); }
+.stat-card.red   .stat-icon { background:rgba(239,68,68,0.12); }
+.stat-card.amber .stat-icon { background:rgba(245,158,11,0.12); }
+.stat-card.blue  .stat-icon { background:rgba(59,130,246,0.12); }
+
+.stat-value {
+  font-size:34px; font-weight:900;
+  line-height:1; margin-bottom:4px;
+}
+.stat-card.gold  .stat-value { color:var(--gold-light); }
+.stat-card.green .stat-value { color:#34d399; }
+.stat-card.red   .stat-value { color:#f87171; }
+.stat-card.amber .stat-value { color:#fbbf24; }
+.stat-card.blue  .stat-value { color:#60a5fa; }
+.stat-label { font-size:12px; color:var(--muted); font-weight:500; }
+
+/* ── Charts grid ── */
+.charts-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:24px;
+}
+.chart-container { position:relative; height:240px; }
+
+/* ── Top lists ── */
+.top-list { list-style:none; }
+.top-list li {
+  display:flex; align-items:center; gap:12px;
+  padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.top-list li:last-child { border-bottom:none; }
+.top-rank {
+  width:26px; height:26px; border-radius:8px; font-size:12px; font-weight:900;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  background: var(--gold-dim); color:var(--gold);
+}
+.top-name { flex:1; font-size:13px; color:var(--text); font-weight:500; }
+.top-count { font-size:13px; font-weight:700; color:var(--gold); }
+.top-bar-wrap { width:80px; height:4px; background:rgba(255,255,255,0.1); border-radius:2px; }
+.top-bar { height:100%; border-radius:2px; background:linear-gradient(90deg,var(--gold),var(--gold-light)); }
+
+/* ── Forms ── */
+.form-section { margin-bottom:20px; }
+.form-label {
+  display:block; font-size:13px; font-weight:700; color:var(--gold);
+  margin-bottom:8px;
+}
+.form-label .req { color:#ef4444; margin-right:3px; }
+.form-input, .form-select, .form-textarea {
+  width:100%; padding:13px 16px;
+  background: rgba(255,255,255,0.06);
+  border:1px solid var(--border); border-radius:10px;
+  color:var(--text); font-size:14px; font-family:'Tajawal',sans-serif; font-weight:500;
+  transition: border-color 0.2s, background 0.2s;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  outline:none; border-color:var(--gold);
+  background: rgba(212,175,55,0.06);
+  box-shadow: 0 0 0 3px rgba(212,175,55,0.12);
+}
+.form-input::placeholder { color:var(--muted); }
+.form-select option { background:#1a2744; }
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+
+/* ── Plate inputs ── */
+.plate-wrap {
+  display:flex; align-items:flex-start; gap:12px;
+}
+.plate-box { flex:1; }
+.plate-input {
+  width:100%; padding:13px 12px;
+  background: rgba(255,255,255,0.06);
+  border:1px solid var(--border); border-radius:10px;
+  color:var(--gold-light); font-size:22px; font-weight:900;
+  text-align:center; letter-spacing:6px; font-family:monospace;
+  transition: border-color 0.2s;
+}
+.plate-input:focus { outline:none; border-color:var(--gold); }
+.plate-hint { text-align:center; font-size:11px; color:var(--muted); margin-top:5px; }
+.plate-sep { padding-top:12px; color:var(--gold); font-size:24px; font-weight:900; }
+.plate-preview {
+  display:none; margin-top:12px; text-align:center;
+  background:var(--gold-dim); border:1px solid var(--border);
+  border-radius:10px; padding:10px; font-size:20px;
+  font-weight:900; color:var(--gold-light); letter-spacing:8px; font-family:monospace;
+}
+
+/* ── Company dropdown ── */
+.company-trigger {
+  width:100%; padding:13px 16px;
+  background: rgba(255,255,255,0.06);
+  border:1px solid var(--border); border-radius:10px;
+  color:var(--text); font-size:14px; font-family:'Tajawal',sans-serif; font-weight:500;
+  display:flex; justify-content:space-between; align-items:center;
+  cursor:pointer; transition: border-color 0.2s;
+}
+.company-trigger:hover { border-color:rgba(212,175,55,0.5); }
+.company-trigger.open { border-color:var(--gold); }
+.company-dropdown {
+  display:none; position:absolute;
+  left:0; right:0; top:calc(100% + 4px);
+  background:#0d1b2a; border:1px solid var(--gold);
+  border-radius:12px; padding:12px; z-index:999;
+  max-height:280px; overflow-y:auto;
+  box-shadow:0 16px 40px rgba(0,0,0,0.6);
+}
+.company-search-input {
+  width:100%; padding:10px 14px;
+  background:rgba(255,255,255,0.08); border:1px solid var(--border); border-radius:8px;
+  color:var(--text); font-size:13px; font-family:'Tajawal',sans-serif;
+  margin-bottom:10px;
+}
+.company-search-input:focus { outline:none; border-color:var(--gold); }
+.company-option {
+  padding:9px 12px; border-radius:8px; cursor:pointer;
+  color:var(--text); font-size:13px; font-weight:500; transition:background 0.15s;
+}
+.company-option:hover, .company-option.selected { background:var(--gold-dim); color:var(--gold-light); }
+.company-wrap { position:relative; }
+
+/* ── Map ── */
+.map-actions { display:flex; gap:10px; margin-bottom:12px; }
+.map-btn {
+  flex:1; padding:11px; border-radius:10px;
+  background:var(--gold-dim); border:1px solid var(--border);
+  color:var(--gold); font-size:13px; font-weight:700;
+  cursor:pointer; font-family:'Tajawal',sans-serif; transition:all 0.2s;
+}
+.map-btn:hover { background:rgba(212,175,55,0.25); }
+#map { height:320px; border-radius:12px; border:1px solid var(--border); display:none; }
+.location-result {
+  margin-top:10px; padding:12px 16px;
+  background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.2);
+  border-radius:10px; display:none;
+}
+.location-result a { color:#34d399; text-decoration:underline; font-size:13px; }
+
+/* ── Image upload ── */
+.upload-btn {
+  width:100%; padding:13px; border-radius:10px;
+  background:var(--gold-dim); border:2px dashed var(--border);
+  color:var(--gold); font-size:13px; font-weight:700;
+  cursor:pointer; font-family:'Tajawal',sans-serif; transition:all 0.2s; text-align:center;
+}
+.upload-btn:hover { border-color:var(--gold); background:rgba(212,175,55,0.2); }
+.img-preview-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px; }
+.img-preview-item {
+  position:relative; width:100%; height:120px;
+  border-radius:10px; overflow:hidden;
+  border:1px solid var(--border);
+}
+.img-preview-item img { width:100%; height:100%; object-fit:cover; }
+.img-remove {
+  position: absolute; top: 4px; right: 4px;
+  background: rgba(239,68,68,0.85); color: white;
+  border: none; border-radius: 50%; width: 22px; height: 22px;
+  font-size: 14px; font-weight: 900; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+}
+
+/* ── Buttons ── */
+.btn-primary {
+  width:100%; padding:15px; border-radius:12px;
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  border:none; color:var(--dark); font-size:16px; font-weight:900;
+  cursor:pointer; font-family:'Tajawal',sans-serif;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 20px rgba(212,175,55,0.3);
+}
+.btn-primary:hover { transform:translateY(-1px); box-shadow:0 8px 30px rgba(212,175,55,0.4); }
+.btn-primary:active { transform:translateY(0); }
+.btn-sm {
+  padding:7px 14px; border-radius:8px; font-size:12px; font-weight:700;
+  cursor:pointer; font-family:'Tajawal',sans-serif; transition:all 0.2s; border:none;
+}
+.btn-approve { background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); color:#34d399; }
+.btn-approve:hover { background:rgba(16,185,129,0.25); }
+.btn-reject  { background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); color:#f87171; }
+.btn-reject:hover  { background:rgba(239,68,68,0.22); }
+.btn-pdf { background:var(--gold-dim); border:1px solid var(--border); color:var(--gold); }
+.btn-pdf:hover { background:rgba(212,175,55,0.25); }
+
+/* ── Violation cards ── */
+.v-card {
+  background:rgba(255,255,255,0.03); border:1px solid var(--border);
+  border-radius:12px; padding:18px; margin-bottom:12px;
+  transition:border-color 0.2s;
+}
+.v-card:hover { border-color:rgba(212,175,55,0.4); }
+.v-card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
+.v-ref { font-size:16px; font-weight:900; color:var(--gold-light); font-family:monospace; }
+.v-status {
+  padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700;
+}
+.v-status.pending { background:rgba(245,158,11,0.15); color:#fbbf24; border:1px solid rgba(245,158,11,0.3); }
+.v-status.approved { background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.3); }
+.v-status.rejected { background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.3); }
+.v-details { display:grid; grid-template-columns:1fr 1fr; gap:6px 16px; margin-bottom:12px; }
+.v-detail { font-size:12px; color:var(--muted); }
+.v-detail strong { color:var(--text); display:block; font-size:13px; margin-bottom:1px; }
+.v-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.05); }
+.v-notes-input {
+  width:100%; padding:10px 14px; border-radius:8px;
+  background:rgba(255,255,255,0.05); border:1px solid var(--border);
+  color:var(--text); font-size:13px; font-family:'Tajawal',sans-serif;
+  margin-bottom:8px;
+}
+.v-notes-input:focus { outline:none; border-color:var(--gold); }
+
+/* ── Search ── */
+.search-wrap { position:relative; margin-bottom:20px; }
+.search-icon { position:absolute; top:50%; transform:translateY(-50%); right:16px; color:var(--muted); }
+.search-input {
+  width:100%; padding:12px 44px 12px 16px;
+  background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:10px;
+  color:var(--text); font-size:14px; font-family:'Tajawal',sans-serif;
+}
+.search-input:focus { outline:none; border-color:var(--gold); }
+.search-input::placeholder { color:var(--muted); }
+
+/* ── Login page ── */
+#loginPage {
+  min-height:100vh; display:flex; align-items:center; justify-content:center;
+  padding:20px;
+  background: linear-gradient(135deg, var(--dark) 0%, var(--dark2) 50%, var(--dark3) 100%);
+}
+.login-card {
+  width:100%; max-width:440px;
+  background:rgba(13,27,42,0.9); border:1px solid var(--border);
+  border-radius:24px; padding:40px; backdrop-filter:blur(20px);
+  box-shadow: 0 40px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(212,175,55,0.05);
+}
+.login-logo {
+  text-align:center; margin-bottom:32px;
+}
+.login-logo .icon {
+  width:72px; height:72px; border-radius:20px; margin:0 auto 16px;
+  background:linear-gradient(135deg,var(--gold),var(--gold-light));
+  display:flex; align-items:center; justify-content:center; font-size:34px;
+}
+.login-logo h1 { font-size:22px; font-weight:900; color:var(--gold-light); }
+.login-logo p { font-size:13px; color:var(--muted); margin-top:4px; }
+.login-tabs { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom:24px; }
+.login-tab {
+  flex:1; padding:10px; border-radius:10px; cursor:pointer; text-align:center;
+  font-size:13px; font-weight:700; transition:all 0.2s;
+  background:rgba(255,255,255,0.04); border:1px solid var(--border); color:var(--muted);
+  font-family:'Tajawal',sans-serif;
+}
+.login-tab.active {
+  background:var(--gold-dim); border-color:var(--gold); color:var(--gold-light);
+}
+.login-error {
+  background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3);
+  color:#fca5a5; padding:12px 16px; border-radius:10px; font-size:13px;
+  margin-bottom:16px; display:none;
+}
+.login-success-msg {
+  text-align:center; padding:20px;
+  background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.2);
+  border-radius:12px; margin-bottom:20px; display:none;
+}
+.success-ref { font-size:26px; font-weight:900; color:var(--gold-light); font-family:monospace; letter-spacing:2px; margin:10px 0; }
+
+/* ── Toast ── */
+.toast {
+  position:fixed; top:24px; left:24px; z-index:9999;
+  background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3);
+  color:#34d399; padding:14px 20px; border-radius:12px;
+  font-size:13px; font-weight:700; display:none;
+  backdrop-filter:blur(10px);
+  animation: slideIn 0.3s ease;
+}
+@keyframes slideIn {
+  from { opacity:0; transform:translateX(-20px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+
+/* ── Tabs (mobile nav) ── */
+.mobile-header {
+  display:none; align-items:center; justify-content:space-between;
+  padding:16px 20px; background:rgba(13,27,42,0.95);
+  border-bottom:1px solid var(--border); position:sticky; top:0; z-index:50;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(212,175,55,0.3); border-radius:3px; }
+
+/* ── Download btn ── */
+.dl-btn {
+  display:none !important;
+  display:none; align-items:center; gap:8px;
+  padding:10px 18px; border-radius:10px;
+  background:var(--gold-dim); border:1px solid var(--border);
+  color:var(--gold); font-size:13px; font-weight:700; cursor:pointer;
+  font-family:'Tajawal',sans-serif; transition:all 0.2s;
+}
+.dl-btn:hover { background:rgba(212,175,55,0.25); }
+.dl-badge { background:var(--gold); color:var(--dark); border-radius:20px; padding:2px 7px; font-size:11px; font-weight:900; }
+
+/* ── Responsive ── */
+@media (max-width:768px) {
+  /* Sidebar */
+  .sidebar {
+    transform: translateX(110%);
+    width: 280px;
+    z-index: 200;
+    transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+  }
+  .sidebar.open { transform: translateX(0); }
+
+  /* Overlay behind sidebar */
+  .sidebar-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 199;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(2px);
+  }
+  .sidebar-overlay.show { display: block; }
+
+  /* Main */
+  .main { margin-right: 0; padding: 12px; padding-bottom: 80px; }
+  .mobile-header { display: flex; }
+
+  /* Charts & grids */
+  .charts-grid { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .v-details { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: 1fr 1fr; }
+
+  /* Violation card actions — stack on mobile */
+  .v-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .v-notes-input {
+    width: 100%;
+    font-size: 14px;
+    padding: 12px;
+  }
+  .v-actions .btn-sm {
+    width: 100%;
+    padding: 13px;
+    font-size: 14px;
+    border-radius: 10px;
+    text-align: center;
+  }
+  .btn-approve, .btn-reject, .btn-pdf {
+    display: block;
+    width: 100% !important;
+  }
+
+  /* Page header */
+  .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .page-title { font-size: 20px; }
+
+  /* Login */
+  .login-card { padding: 28px 20px; border-radius: 18px; }
+  .login-logo h1 { font-size: 20px; }
+
+  /* Bottom nav bar */
+  .mobile-bottom-nav {
+    display: flex !important;
+  }
+
+  /* Report period buttons */
+  .report-period-btns { flex-wrap: wrap; }
+  .btn-period { flex: 1; min-width: 80px; padding: 10px 8px; font-size: 12px; }
+
+  /* Filter bar */
+  /* filter chips are already responsive */
+  .filter-group { min-width: 100%; }
+}
+
+/* Mobile header bar */
+.mobile-header {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: rgba(13,27,42,0.98);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 50;
+  backdrop-filter: blur(12px);
+}
+.mobile-header-title {
+  font-size: 15px; font-weight: 900; color: var(--gold-light);
+  display: flex; align-items: center; gap: 8px;
+}
+.hamburger-btn {
+  width: 42px; height: 42px; border-radius: 10px;
+  background: var(--gold-dim); border: 1px solid var(--border);
+  color: var(--gold); font-size: 20px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s;
+}
+.hamburger-btn:hover { background: rgba(212,175,55,0.25); }
+
+/* Bottom nav bar for mobile */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 150;
+  background: rgba(13,27,42,0.98);
+  border-top: 1px solid var(--border);
+  backdrop-filter: blur(16px);
+  padding: 6px 0 env(safe-area-inset-bottom, 6px);
+  justify-content: space-around;
+  align-items: center;
+}
+.bottom-nav-item {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 6px 12px; border-radius: 10px; cursor: pointer;
+  color: var(--muted); font-size: 10px; font-weight: 700;
+  transition: all 0.2s; min-width: 48px; text-align: center;
+  border: none; background: transparent;
+}
+.bottom-nav-item .bn-icon { font-size: 28px; line-height: 1; }
+.bottom-nav-item { font-size: 11px; padding: 8px 10px; }
+.bottom-nav-item.active { color: var(--gold-light); }
+.bottom-nav-item.active .bn-icon {
+  background: var(--gold-dim);
+  border-radius: 10px; padding: 5px 7px;
+}
+.bottom-nav-badge {
+  position: absolute; top: 2px; right: 2px;
+  background: var(--red); color: white;
+  border-radius: 10px; padding: 1px 5px; font-size: 9px; font-weight: 900;
+}
+.bottom-nav-wrap { position: relative; }
+.hide { display:none !important; }
+
+/* ── Advanced Filter ── */
+.filter-bar {
+  background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:14px 16px; margin-bottom:20px;
+}
+.filter-search-row {
+  margin-bottom:10px;
+}
+.filter-search-row .filter-input {
+  width:100%; padding:10px 14px; border-radius:10px;
+  background:rgba(255,255,255,0.06); border:1px solid var(--border);
+  color:var(--text); font-size:13px; font-family:'Tajawal',sans-serif;
+}
+.filter-search-row .filter-input:focus { outline:none; border-color:var(--gold); }
+.filter-chips {
+  display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+  direction:rtl;
+}
+.filter-chip {
+  display:flex; align-items:center; gap:4px;
+  background:rgba(255,255,255,0.05); border:1px solid var(--border);
+  border-radius:20px; padding:4px 6px 4px 4px;
+  font-size:12px; font-weight:600; color:var(--text);
+  transition:all 0.2s;
+}
+.filter-chip:hover { border-color:rgba(212,175,55,0.4); }
+.filter-chip .fc-icon { font-size:14px; }
+.filter-chip select {
+  background:transparent; border:none; color:var(--text);
+  font-size:11px; font-weight:700; font-family:'Tajawal',sans-serif;
+  cursor:pointer; outline:none; padding:2px 2px 2px 0;
+  -webkit-appearance:none; appearance:none;
+  max-width:90px;
+}
+.filter-chip select option { background:#1a2744; color:#e2e8f0; }
+.filter-chip.active { background:var(--gold-dim); border-color:var(--gold); }
+.filter-chip.active select { color:var(--gold-light); }
+.btn-filter-reset-chip {
+  display:flex; align-items:center; gap:3px;
+  background:rgba(255,255,255,0.04); border:1px solid var(--border);
+  border-radius:20px; padding:5px 10px;
+  font-size:11px; font-weight:700; color:var(--muted);
+  cursor:pointer; font-family:'Tajawal',sans-serif; transition:all 0.2s;
+}
+.btn-filter-reset-chip:hover { background:rgba(239,68,68,0.1); border-color:rgba(239,68,68,0.3); color:#fca5a5; }
+body.light-mode .filter-chip { background:rgba(0,0,0,0.03); border-color:rgba(180,145,20,0.2); }
+body.light-mode .filter-chip select { color:#1a2744; }
+body.light-mode .filter-chip.active { background:rgba(212,175,55,0.12); }
+body.light-mode .filter-chip.active select { color:#6b5010; }
+body.light-mode .filter-search-row .filter-input { background:rgba(0,0,0,0.04); border-color:rgba(180,145,20,0.25); color:#1a2744; }
+.filter-group { display:none; }
+.filter-label { display:none; }
+.filter-select, .filter-input {
+  padding:9px 12px; background:rgba(255,255,255,0.06); border:1px solid var(--border);
+  border-radius:8px; color:var(--text); font-size:12px; font-family:'Tajawal',sans-serif;
+}
+.filter-select:focus, .filter-input:focus { outline:none; border-color:var(--gold); }
+.filter-select option { background:#1a2744; }
+.filter-actions { display:none; }
+.btn-filter { padding:9px 16px; border-radius:8px; font-size:12px; font-weight:700;
+  cursor:pointer; font-family:'Tajawal',sans-serif; transition:all 0.2s; border:none; }
+.btn-filter-apply { background:linear-gradient(135deg,var(--gold),var(--gold-light)); color:var(--dark); }
+.btn-filter-reset { background:rgba(255,255,255,0.07); border:1px solid var(--border) !important; color:var(--muted); border:none; }
+.filter-result-count { font-size:12px; color:var(--muted); padding:4px 0; }
+
+/* ── WhatsApp notification ── */
+.wa-settings { background:rgba(37,211,102,0.08); border:1px solid rgba(37,211,102,0.25);
+  border-radius:12px; padding:16px 20px; margin-bottom:16px; }
+.wa-settings h4 { color:#25d366; font-size:14px; margin-bottom:12px; }
+.wa-toggle { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.toggle-switch { position:relative; width:44px; height:24px; }
+.toggle-switch input { opacity:0; width:0; height:0; }
+.toggle-slider {
+  position:absolute; cursor:pointer; inset:0; background:rgba(255,255,255,0.1);
+  border-radius:24px; transition:.3s;
+}
+.toggle-slider:before {
+  position:absolute; content:""; height:18px; width:18px; left:3px; bottom:3px;
+  background:white; border-radius:50%; transition:.3s;
+}
+input:checked + .toggle-slider { background:#25d366; }
+input:checked + .toggle-slider:before { transform:translateX(20px); }
+.wa-number-row { display:flex; gap:8px; }
+.wa-number-input { flex:1; }
+
+/* ── Reports Tab ── */
+.report-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+.report-period-btns { display:flex; gap:8px; margin-bottom:20px; }
+.btn-period {
+  padding:10px 20px; border-radius:10px; font-size:13px; font-weight:700;
+  cursor:pointer; font-family:'Tajawal',sans-serif; transition:all 0.2s;
+  background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--muted);
+}
+.btn-period.active { background:var(--gold-dim); border-color:var(--gold); color:var(--gold-light); }
+.report-stat { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; text-align:center; }
+.report-stat-num { font-size:36px; font-weight:900; color:var(--gold-light); }
+.report-stat-label { font-size:12px; color:var(--muted); margin-top:4px; }
+.report-table { width:100%; border-collapse:collapse; font-size:13px; }
+.report-table th { padding:10px 14px; background:rgba(212,175,55,0.12); color:var(--gold); text-align:right; border:1px solid rgba(212,175,55,0.2); }
+.report-table td { padding:10px 14px; border:1px solid rgba(255,255,255,0.05); color:var(--text); }
+.report-table tr:nth-child(even) td { background:rgba(255,255,255,0.02); }
+.btn-dl-report {
+  display:inline-flex; align-items:center; gap:8px; padding:11px 20px; border-radius:10px;
+  background:var(--gold-dim); border:1px solid var(--border); color:var(--gold);
+  font-size:13px; font-weight:700; cursor:pointer; font-family:'Tajawal',sans-serif; transition:all 0.2s;
+}
+.btn-dl-report:hover { background:rgba(212,175,55,0.25); }
+/* ── Repeat Offender Badges ── */
+.repeat-badge {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800;
+  margin-left:6px;
+}
+.repeat-badge.plate { background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:#f87171; }
+.repeat-badge.id    { background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.4); color:#fbbf24; }
+.repeat-badge.co    { background:rgba(168,85,247,0.15); border:1px solid rgba(168,85,247,0.4); color:#c084fc; }
+
+.repeat-warning {
+  margin: 8px 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.3);
+  font-size: 12px;
+  color: #fca5a5;
+  display: flex; flex-direction:column; gap:4px;
+}
+.repeat-warning .rw-title { font-weight:900; font-size:13px; color:#f87171; margin-bottom:4px; }
+.repeat-warning .rw-item  { color:#e2e8f0; }
+.repeat-warning .rw-item span { color:#fbbf24; font-weight:700; }
+
+.repeat-form-alert {
+  padding:10px 14px; border-radius:10px; margin-top:8px;
+  background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.35);
+  color:#f87171; font-size:12px; font-weight:700; display:none;
+}
+
+/* Admin repeat table */
+.repeat-count-badge {
+  display:inline-block; background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.5);
+  color:#f87171; border-radius:20px; padding:2px 10px; font-size:12px; font-weight:900;
+}
+@media (max-width:768px) {
+  .report-grid { grid-template-columns:1fr; }
+  .filter-bar { flex-direction:column; }
+}
+
+/* ── Light mode extra text fixes ── */
+body.light-mode { color: #1a2744; }
+body.light-mode .page-title { color: #1a2744 !important; }
+body.light-mode .page-subtitle { color: #4a6080 !important; }
+body.light-mode .stat-value { color: #1a2744 !important; }
+body.light-mode .stat-label { color: #4a6080 !important; }
+body.light-mode .user-name { color: #1a2744 !important; }
+body.light-mode .user-role { color: #4a6080 !important; }
+body.light-mode .v-ref { color: #8b6914 !important; }
+body.light-mode .form-label { color: #6b5010 !important; font-weight: 700; }
+body.light-mode .card-header h3 { color: #1a2744 !important; }
+body.light-mode h3, body.light-mode h4 { color: #1a2744 !important; }
+body.light-mode strong { color: #6b5010 !important; }
+body.light-mode .top-name { color: #1a2744 !important; }
+body.light-mode .top-count { color: #8b6914 !important; }
+body.light-mode .top-rank { color: #8b6914 !important; border-color: rgba(139,105,20,0.3) !important; }
+body.light-mode .filter-input::placeholder { color: rgba(30,50,90,0.4) !important; }
+body.light-mode .company-search-input::placeholder { color: rgba(30,50,90,0.4) !important; }
+body.light-mode .report-table td { color: #1a2744 !important; }
+body.light-mode .report-table th { color: #6b5010 !important; }
+body.light-mode .dl-btn { color: #6b5010 !important; border-color: rgba(139,105,20,0.3) !important; background: rgba(212,175,55,0.1) !important; }
+body.light-mode .btn-logout { color: #c0392b !important; }
+body.light-mode .sidebar-logo h2 { color: #8b6914 !important; }
+body.light-mode .sidebar-logo p { color: #4a6080 !important; }
+body.light-mode .login-card h1 { color: #1a2744 !important; }
+body.light-mode .login-card p { color: #4a6080 !important; }
+body.light-mode .login-tab { color: #4a6080 !important; }
+body.light-mode .login-tab.active { color: #6b5010 !important; background: rgba(212,175,55,0.15) !important; border-color: var(--gold) !important; }
+body.light-mode .mobile-header-title { color: #8b6914 !important; }
+body.light-mode .hamburger-btn { color: #8b6914 !important; }
+body.light-mode .bottom-nav-item { color: rgba(30,50,90,0.55) !important; }
+body.light-mode .bottom-nav-item.active { color: #8b6914 !important; }
+body.light-mode .v-card-header { background: rgba(212,175,55,0.06) !important; }
+body.light-mode .v-status.pending { background: rgba(245,158,11,0.15) !important; color: #b45309 !important; border-color: rgba(245,158,11,0.4) !important; }
+body.light-mode .v-status.approved { background: rgba(16,185,129,0.12) !important; color: #065f46 !important; border-color: rgba(16,185,129,0.4) !important; }
+body.light-mode .v-status.rejected { background: rgba(239,68,68,0.1) !important; color: #991b1b !important; border-color: rgba(239,68,68,0.3) !important; }
+body.light-mode .repeat-badge.plate { background: rgba(239,68,68,0.12) !important; color: #991b1b !important; }
+body.light-mode .repeat-badge.id { background: rgba(245,158,11,0.12) !important; color: #92400e !important; }
+body.light-mode .repeat-warning { background: rgba(239,68,68,0.06) !important; border-color: rgba(239,68,68,0.25) !important; }
+body.light-mode .repeat-warning .rw-title { color: #991b1b !important; }
+body.light-mode .repeat-warning .rw-item { color: #1a2744 !important; }
+body.light-mode .img-preview-grid img { border-color: rgba(180,145,20,0.3) !important; }
+body.light-mode .upload-btn { color: #6b5010 !important; }
+body.light-mode .plate-preview { background: rgba(212,175,55,0.12) !important; border-color: rgba(180,145,20,0.3) !important; color: #6b5010 !important; }
+body.light-mode .plate-input { color: #1a2744 !important; }
+body.light-mode .location-result { color: #1a2744 !important; }
+body.light-mode .success-msg { background: rgba(16,185,129,0.1) !important; border-color: rgba(16,185,129,0.3) !important; color: #065f46 !important; }
+body.light-mode .theme-pill { background: rgba(255,255,255,0.95) !important; color: #6b5010 !important; box-shadow: 0 4px 20px rgba(0,0,0,0.12) !important; }
+body.light-mode .toast { color: #1a2744 !important; }
+
+/* ── Login tab 3 columns ── */
+
+/* ═══ Security Check Modal ═══ */
+.security-overlay {
+  position:fixed; inset:0; z-index:10000;
+  background:rgba(0,0,0,0.75); backdrop-filter:blur(8px);
+  display:flex; align-items:center; justify-content:center;
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.security-modal {
+  background:var(--card); border:2px solid var(--gold);
+  border-radius:20px; padding:28px 32px; max-width:520px; width:90%;
+  box-shadow:0 40px 80px rgba(0,0,0,0.6);
+}
+.security-modal h3 { color:var(--gold-light); font-size:18px; font-weight:900; margin-bottom:16px; text-align:center; }
+.scan-result {
+  padding:14px 18px; border-radius:12px; margin:12px 0; font-size:13px; font-weight:700;
+}
+.scan-result.clear { background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); color:#34d399; }
+.scan-result.blocked { background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:#f87171; }
+.scan-result.warning { background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3); color:#fbbf24; }
+.scan-progress {
+  height:4px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden; margin:16px 0;
+}
+.scan-progress-bar {
+  height:100%; background:linear-gradient(90deg,var(--gold),var(--gold-light));
+  border-radius:4px; transition:width 0.6s ease;
+}
+.scan-item { display:flex; align-items:center; gap:10px; padding:8px 0; font-size:13px; color:var(--text); }
+.scan-icon { font-size:18px; width:24px; text-align:center; }
+.scan-status { margin-right:auto; font-weight:700; font-size:12px; }
+.scan-status.ok { color:#34d399; }
+.scan-status.alert { color:#f87171; }
+.scan-status.pending { color:var(--muted); }
+.security-actions { display:flex; gap:10px; margin-top:16px; }
+.security-actions button { flex:1; padding:12px; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; font-family:'Tajawal',sans-serif; }
+.btn-security-proceed { background:linear-gradient(135deg,var(--gold),var(--gold-light)); border:none; color:var(--dark); }
+.btn-security-cancel { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; }
+body.light-mode .security-modal { background:rgba(255,255,255,0.95); border-color:var(--gold); }
+body.light-mode .scan-item { color:#1a2744; }
+
+/* ═══ Email notification styles ═══ */
+.email-settings { background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.25);
+  border-radius:12px; padding:16px 20px; margin-bottom:16px; }
+.email-settings h4 { color:#60a5fa; font-size:14px; margin-bottom:12px; }
+body.light-mode .email-settings { background:rgba(59,130,246,0.06); border-color:rgba(59,130,246,0.2); }
+
+</style>
+</head>
+<body>
+
+<!-- ─── THEME TOGGLE PILL ──────────────────────────── -->
+<button class="theme-pill" id="themePill" onclick="toggleTheme()" title="تبديل الوضع النهاري/الليلي">
+  <span id="themeIcon" style="font-size:18px;">☀️</span>
+  <span id="themeLabel">نهاري</span>
+</button>
+
+<!-- ─── LOGIN PAGE ─────────────────────────────────────── -->
+<div id="loginPage">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="icon" style="font-size:52px;line-height:1;margin-bottom:10px;">⚠️</div>
+      <h1>نظام مخالفات القدية</h1>
+      <p>Qiddiya Violations Management System</p>
+    </div>
+    <div class="login-tabs">
+      <button class="login-tab active" onclick="switchLoginTab('employee')" id="empTab">👷 موظف</button>
+      <button class="login-tab" onclick="switchLoginTab('supervisor')" id="supTab">👔 مشرف</button>
+      <button class="login-tab" onclick="switchLoginTab('admin')" id="adminTab">🛡️ مراقب</button>
+    </div>
+    <div class="login-error" id="loginError"></div>
+    <div class="form-section">
+      <label class="form-label">الرقم الوظيفي</label>
+      <input class="form-input" type="text" id="employeeId" placeholder="أدخل الرقم الوظيفي" maxlength="20" autocomplete="username">
+    </div>
+    <div class="form-section">
+      <label class="form-label">الرقم السري</label>
+      <input class="form-input" type="password" id="userPassword" placeholder="أدخل الرقم السري" maxlength="20">
+    </div>
+    <div class="form-section" id="supervisorCodeField" style="display:none;">
+      <label class="form-label">🔑 رمز الدخول للمشرف</label>
+      <input class="form-input" type="password" id="supervisorCode" placeholder="أدخل رمز المشرف" autocomplete="off">
+    </div>
+    <button class="btn-primary" onclick="login()">تسجيل الدخول</button>
+  </div>
+</div>
+
+<!-- ─── MAIN APP ──────────────────────────────────────── -->
+<div id="mainApp" class="hide">
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Sidebar overlay (mobile) -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon" style="font-size:32px;">⚠️</div>
+      <h2>نظام مخالفات القدية</h2>
+      <p>Qiddiya Violations System</p>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar">👤</div>
+      <div class="user-info">
+        <div class="user-name" id="userName">—</div>
+        <div class="user-role" id="userRole">موظف</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav" id="sidebarNav"></nav>
+    <div class="sidebar-footer">
+      <button class="dl-btn" id="excelBtn" onclick="downloadExcelFile()">
+        📊 تصدير Excel <span class="dl-badge" id="excelBadge">0</span>
+      </button>
+      <button class="btn-logout" onclick="logout()" style="margin-top:8px;">🚪 تسجيل الخروج</button>
+    </div>
+  </aside>
+
+  <!-- Mobile header -->
+  <div class="mobile-header" id="mobileHeader">
+    <div class="mobile-header-title" style="font-size:17px;gap:10px;">⚠️ مخالفات القدية</div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="hamburger-btn" id="mobileNotifBtn" onclick="showTab('notifications');closeSidebar();" style="font-size:16px;position:relative;" title="الإشعارات">
+        🔔
+        <span id="mobileNotifBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--red);color:white;border-radius:10px;padding:1px 5px;font-size:8px;font-weight:900;"></span>
+      </button>
+      <button class="hamburger-btn" onclick="logout()" style="font-size:16px;background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#f87171;" title="تسجيل الخروج">
+        🚪
+      </button>
+      <button class="hamburger-btn" onclick="toggleSidebar()">☰</button>
+    </div>
+  </div>
+
+  <!-- Mobile bottom navigation -->
+  <nav class="mobile-bottom-nav" id="mobileBottomNav"></nav>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- ── DASHBOARD TAB ── -->
+    <div id="dashboardTab" class="hide">
+      <div class="page-header">
+        <div>
+          <div class="page-title">📊 لوحة الإحصائيات</div>
+          <div class="page-subtitle" id="dashboardSubtitle">نظرة شاملة على المخالفات المسجلة</div>
+        </div>
+        <!-- فلتر النوع -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <select class="form-select" id="dashFilterType" onchange="renderDashboard()" style="min-width:160px;padding:8px 12px;font-size:13px;">
+            <option value="">كل الأنواع</option>
+            <option value="مرورية">🚗 مرورية</option>
+            <option value="جنائية">⚖️ جنائية</option>
+            <option value="عدم_التزام">⚠️ عدم التزام</option>
+            <option value="تصاريح">📋 تصاريح</option>
+          </select>
+        </div>
+      </div>
+      <!-- Stat cards -->
+      <div class="stats-row" id="statCards"></div>
+      <!-- Charts Row 1 -->
+      <div class="charts-grid">
+        <div class="card">
+          <div class="card-header"><h3>📋 المخالفات حسب النوع الرئيسي</h3></div>
+          <div class="card-body"><div class="chart-container"><canvas id="chartByType"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>📝 المخالفات حسب النوع الفرعي</h3></div>
+          <div class="card-body"><div class="chart-container" style="height:350px;"><canvas id="chartBySubType"></canvas></div></div>
+        </div>
+      </div>
+      <!-- Charts Row 2 -->
+      <div class="charts-grid">
+        <div class="card">
+          <div class="card-header"><h3>⚖️ حالة المخالفات</h3></div>
+          <div class="card-body"><div class="chart-container"><canvas id="chartByStatus"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>📍 حسب المنطقة</h3></div>
+          <div class="card-body"><div class="chart-container"><canvas id="chartByZone"></canvas></div></div>
+        </div>
+      </div>
+      <!-- Charts Row 3 -->
+      <div class="charts-grid">
+        <div class="card">
+          <div class="card-header"><h3>🔄 حسب الشفت</h3></div>
+          <div class="card-body"><div class="chart-container"><canvas id="chartByShift"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>👥 حسب المجموعة</h3></div>
+          <div class="card-body"><div class="chart-container"><canvas id="chartByGroup"></canvas></div></div>
+        </div>
+      </div>
+      <!-- Charts Row 4 - Companies -->
+      <div class="charts-grid">
+        <div class="card">
+          <div class="card-header"><h3>🏢 أكثر الشركات مخالفةً (رسم بياني)</h3></div>
+          <div class="card-body"><div class="chart-container" style="height:350px;"><canvas id="chartByCompany"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>🏢 مخالفات الشركات حسب النوع</h3></div>
+          <div class="card-body"><div class="chart-container" style="height:350px;"><canvas id="chartCompanyByType"></canvas></div></div>
+        </div>
+      </div>
+      <!-- Top Lists -->
+      <div class="charts-grid">
+        <div class="card">
+          <div class="card-header"><h3>🏆 أنشط المفتشين</h3></div>
+          <div class="card-body"><ul class="top-list" id="topInspectors"></ul></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>📈 أكثر الشركات مخالفةً</h3></div>
+          <div class="card-body"><ul class="top-list" id="topCompanies"></ul></div>
+        </div>
+      </div>
+      <!-- Detailed Sub-type Table -->
+      <div class="card" style="margin-top:16px;">
+        <div class="card-header"><h3>📊 تفصيل المخالفات حسب النوع الرئيسي والفرعي</h3></div>
+        <div class="card-body" id="subTypeTable" style="overflow-x:auto;"></div>
+      </div>
+    </div>
+
+    <!-- ── FORM TAB ── -->
+    <div id="formTab" class="hide">
+      <div class="page-header">
+        <div>
+          <div class="page-title">📝 تسجيل مخالفة جديدة</div>
+          <div class="page-subtitle">أدخل بيانات المخالفة بدقة</div>
+        </div>
+      </div>
+      <!-- Success msg -->
+      <div class="login-success-msg" id="successMsg">
+        <div style="font-size:28px;">✅</div>
+        <div style="font-size:16px; font-weight:700; color:#34d399; margin-top:8px;">تم تسجيل المخالفة بنجاح!</div>
+        <div class="success-ref" id="refNumber"></div>
+        <div style="font-size:12px; color:var(--muted);">المخالفة قيد مراجعة المشرف</div>
+        <button class="btn-sm btn-pdf" style="margin-top:12px;" onclick="sharePDF()">📄 تحميل PDF</button>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════
+           المرحلة 1: الفحص الأمني — لوحة المركبة + رقم الهوية/الإقامة (إجباري)
+           ═══════════════════════════════════════════════ -->
+      <div class="card" id="securityCheckCard">
+        <div class="card-header"><h3>🔍 الخطوة 1: الفحص الأمني</h3></div>
+        <div class="card-body">
+          <div style="text-align:center;margin-bottom:20px;">
+            <div style="font-size:40px;margin-bottom:8px;">🛡️</div>
+            <div style="font-size:15px;font-weight:700;color:var(--gold-light);margin-bottom:4px;">فحص إجباري قبل إصدار المخالفة</div>
+            <div style="font-size:12px;color:var(--muted);">أدخل لوحة المركبة ورقم الهوية/الإقامة للتحقق من التعاميم ومنع الدخول</div>
+          </div>
+
+          <!-- إدخال لوحة المركبة -->
+          <div class="form-section">
+            <label class="form-label"><span class="req">*</span> 🚗 لوحة المركبة</label>
+            <div class="plate-wrap">
+              <div class="plate-box">
+                <input class="plate-input" type="text" id="scanPlateLetters" placeholder="ABC" maxlength="4"
+                  oninput="this.value=this.value.replace(/[^a-zA-Z]/g,'').toUpperCase(); updateScanPlatePreview()">
+                <div class="plate-hint">حروف إنجليزية</div>
+              </div>
+              <div class="plate-sep">—</div>
+              <div class="plate-box">
+                <input class="plate-input" type="text" id="scanPlateNumbers" placeholder="1234" maxlength="4"
+                  oninput="this.value=this.value.replace(/[^0-9]/g,''); updateScanPlatePreview()">
+                <div class="plate-hint">أرقام فقط</div>
+              </div>
+            </div>
+            <div class="plate-preview" id="scanPlatePreview"></div>
+          </div>
+
+          <!-- إدخال رقم الهوية / الإقامة -->
+          <div class="form-section" style="margin-top:8px;">
+            <label class="form-label"><span class="req">*</span> 🪪 رقم الهوية / الإقامة</label>
+            <input class="form-input" type="text" id="scanIdNumber" placeholder="أدخل رقم الهوية أو الإقامة (10 أرقام)" maxlength="10"
+              oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="font-size:20px;text-align:center;letter-spacing:4px;font-weight:900;">
+          </div>
+
+          <!-- نتيجة الفحص -->
+          <div id="scanResultBox" style="display:none;"></div>
+
+          <!-- زر الفحص -->
+          <button class="btn-primary" onclick="runSecurityScan()" id="btnRunScan" style="margin-top:16px;">🔍 فحص اللوحة والهوية</button>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════
+           المرحلة 2: نموذج المخالفة الكامل (مخفي حتى يتم الفحص)
+           ═══════════════════════════════════════════════ -->
+      <div class="card" id="fullViolationForm" style="display:none;margin-top:16px;">
+        <div class="card-header">
+          <h3>⚠️ الخطوة 2: معلومات المخالفة</h3>
+          <!-- شارة حالة الفحص -->
+          <span id="securityBadge" style="margin-right:auto;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:#34d399;">✅ تم الفحص</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="form-section">
+              <label class="form-label"><span class="req">*</span> نوع المخالفة الرئيسي</label>
+              <select class="form-select" id="mainViolationType" onchange="updateSubViolations()">
+                <option value="">— اختر —</option>
+                <option value="مرورية">مخالفة مرورية 🚗</option>
+                <option value="جنائية">مخالفة جنائية ⚖️</option>
+                <option value="عدم_التزام">عدم التزام بأنظمة القدية 🏗️</option>
+                <option value="تصاريح">مخالفة التصاريح 📋</option>
+              </select>
+            </div>
+            <div class="form-section">
+              <label class="form-label"><span class="req">*</span> نوع المخالفة الفرعي</label>
+              <select class="form-select" id="subViolationType" onchange="toggleOtherField()" disabled>
+                <option value="">— اختر النوع أولاً —</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-section" id="otherViolationField" style="display:none;">
+            <label class="form-label"><span class="req">*</span> تفاصيل المخالفة</label>
+            <input class="form-input" type="text" id="otherViolationDetail" placeholder="اكتب تفاصيل المخالفة">
+          </div>
+          <div class="form-section" id="personCountField" style="display:none;">
+            <label class="form-label"><span class="req">*</span> عدد الأشخاص</label>
+            <input class="form-input" type="number" id="personCount" placeholder="أدخل العدد" min="1" max="100">
+          </div>
+          <div class="form-grid">
+            <div class="form-section">
+              <label class="form-label"><span class="req">*</span> نوع التصريح</label>
+              <select class="form-select" id="permitType">
+                <option value="">— اختر —</option>
+                <option value="QR">QR Code</option>
+                <option value="بطاقة">بطاقة</option>
+                <option value="ورقي">ورقي</option>
+                <option value="فاتورة مورد">فاتورة مورد</option>
+                <option value="إلكتروني">إلكتروني</option>
+                <option value="لايوجد">لا يوجد</option>
+              </select>
+            </div>
+            <div class="form-section">
+              <label class="form-label"><span class="req">*</span> المنطقة</label>
+              <select class="form-select" id="zone">
+                <option value="">— اختر —</option>
+                <option value="Upper Zone">Upper Zone</option>
+                <option value="Lower East Zone">Lower East Zone</option>
+                <option value="Lower West Zone">Lower West Zone</option>
+              </select>
+            </div>
+            <div class="form-section">
+              <label class="form-label"><span class="req">*</span> المجموعة المستلمة</label>
+              <select class="form-select" id="receivingGroup">
+                <option value="">— اختر —</option>
+                <option value="Group1">Group 1</option>
+                <option value="Group2">Group 2</option>
+                <option value="Group3">Group 3</option>
+                <option value="Group4">Group 4</option>
+                <option value="Group A&B">Group A&B</option>
+              </select>
+            </div>
+            <div class="form-section">
+              <label class="form-label"><span class="req">*</span> الشفت</label>
+              <select class="form-select" id="shift">
+                <option value="">— اختر —</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+              </select>
+            </div>
+          </div>
+          <!-- Company -->
+          <div class="form-section">
+            <label class="form-label"><span class="req">*</span> اسم الشركة</label>
+            <input type="hidden" id="companyName">
+            <div class="company-wrap">
+              <div class="company-trigger" id="companyTrigger" onclick="toggleCompanyDropdown()">
+                <span id="companyDisplayText" style="color:var(--muted);">— اختر الشركة —</span>
+                <span>▾</span>
+              </div>
+              <div class="company-dropdown" id="companyDropdown">
+                <input class="company-search-input" type="text" id="companySearch" placeholder="🔍 ابحث عن الشركة..." oninput="filterCompanies()" onclick="event.stopPropagation()">
+                <div id="companyList"></div>
+              </div>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-section">
+              <label class="form-label"><span class="req">*</span> رقم هوية المخالف</label>
+              <input class="form-input" type="text" id="violatorId" placeholder="10 أرقام" maxlength="10" oninput="checkRepeatOnForm()">
+            </div>
+            <div class="form-section">
+              <label class="form-label"><span class="req">*</span> رقم جوال المخالف</label>
+              <input class="form-input" type="tel" id="violatorPhone" placeholder="05xxxxxxxx" maxlength="10">
+            </div>
+          </div>
+          <!-- Plate -->
+          <div class="form-section">
+            <label class="form-label"><span class="req">*</span> لوحة المركبة</label>
+            <input type="hidden" id="vehiclePlate">
+            <div class="plate-wrap">
+              <div class="plate-box">
+                <input class="plate-input" type="text" id="plateLetters" placeholder="ABC" maxlength="4"
+                  oninput="this.value=this.value.replace(/[^a-zA-Z]/g,'').toUpperCase(); updatePlate(); checkRepeatOnForm()">
+                <div class="plate-hint">حروف إنجليزية</div>
+              </div>
+              <div class="plate-sep">—</div>
+              <div class="plate-box">
+                <input class="plate-input" type="text" id="plateNumbers" placeholder="1234" maxlength="4"
+                  oninput="this.value=this.value.replace(/[^0-9]/g,''); updatePlate(); checkRepeatOnForm()">
+                <div class="plate-hint">أرقام فقط</div>
+              </div>
+            </div>
+            <div class="plate-preview" id="platePreview"></div>
+          </div>
+          <!-- Repeat Alert -->
+          <div class="repeat-form-alert" id="formRepeatAlert"></div>
+          <!-- Map -->
+          <div class="form-section">
+            <label class="form-label"><span class="req">*</span> 📍 الموقع الجغرافي</label>
+            <div class="map-actions">
+              <button class="map-btn" type="button" onclick="showMap()">🗺️ فتح الخريطة</button>
+              <button class="map-btn" type="button" onclick="getCurrentLocation()">📍 موقعي الحالي</button>
+            </div>
+            <div id="map" style="display:none;"></div>
+            <div class="location-result" id="coordinatesDisplay"></div>
+          </div>
+          <!-- Images -->
+          <div class="form-section">
+            <label class="form-label"><span class="req">*</span> 📸 صور المخالفة (مطلوب — حتى 6 صور)</label>
+            <input type="file" id="violationImages" accept="image/*" multiple capture="environment" style="display:none;" onchange="handleImageUpload(event)">
+            <div class="upload-btn" id="uploadBtn" onclick="document.getElementById('violationImages').click()" style="cursor:pointer;">
+              <span style="font-size:28px;display:block;margin-bottom:4px;">📷</span>
+              <span style="font-weight:700;">اضغط لرفع صور المخالفة</span>
+              <span style="font-size:11px;opacity:0.7;display:block;margin-top:2px;">JPG / PNG — يمكن رفع أكثر من صورة</span>
+            </div>
+            <div class="img-preview-grid" id="imagePreview"></div>
+            <div id="imgRequiredAlert" style="display:none;color:#f87171;font-size:12px;font-weight:700;margin-top:6px;">⚠️ يجب رفع صورة واحدة على الأقل</div>
+          </div>
+          <button class="btn-primary" onclick="submitViolation()">✅ تسجيل المخالفة</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── VIOLATIONS LIST TAB ── -->
+    <div id="myViolationsTab" class="hide">
+      <div class="page-header">
+        <div>
+          <div class="page-title">📋 سجل المخالفات</div>
+          <div class="page-subtitle">جميع المخالفات المسجلة</div>
+        </div>
+      </div>
+      <!-- Compact Filter Bar -->
+      <div class="filter-bar">
+        <div class="filter-search-row">
+          <input class="filter-input" type="text" id="searchInput" placeholder="🔍 بحث: رقم مرجع، هوية، جوال، شركة، مفتش..." oninput="applyFilters()">
+        </div>
+        <div class="filter-chips">
+          <div class="filter-chip" id="chipStatus">
+            <span class="fc-icon">📌</span>
+            <select id="filterStatus" onchange="applyFilters(); updateChipActive('chipStatus','filterStatus')">
+              <option value="">الحالة</option>
+              <option value="pending">⏳ مراجعة</option>
+              <option value="approved">✅ موافق</option>
+              <option value="rejected">❌ مرفوض</option>
+            </select>
+          </div>
+          <div class="filter-chip" id="chipZone">
+            <span class="fc-icon">📍</span>
+            <select id="filterZone" onchange="applyFilters(); updateChipActive('chipZone','filterZone')">
+              <option value="">المنطقة</option>
+              <option value="Upper Zone">Upper</option>
+              <option value="Lower East Zone">Lower E</option>
+              <option value="Lower West Zone">Lower W</option>
+            </select>
+          </div>
+          <div class="filter-chip" id="chipShift">
+            <span class="fc-icon">🔄</span>
+            <select id="filterShift" onchange="applyFilters(); updateChipActive('chipShift','filterShift')">
+              <option value="">الشفت</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+            </select>
+          </div>
+          <div class="filter-chip" id="chipGroup">
+            <span class="fc-icon">👥</span>
+            <select id="filterGroup" onchange="applyFilters(); updateChipActive('chipGroup','filterGroup')">
+              <option value="">المجموعة</option>
+              <option value="Group1">G1</option>
+              <option value="Group2">G2</option>
+              <option value="Group3">G3</option>
+              <option value="Group4">G4</option>
+              <option value="Group A&B">A&B</option>
+            </select>
+          </div>
+          <div class="filter-chip" id="chipType">
+            <span class="fc-icon">⚠️</span>
+            <select id="filterType" onchange="applyFilters(); updateChipActive('chipType','filterType')">
+              <option value="">النوع</option>
+              <option value="مرورية">مرورية</option>
+              <option value="جنائية">جنائية</option>
+              <option value="عدم_التزام">عدم التزام</option>
+              <option value="تصاريح">تصاريح</option>
+            </select>
+          </div>
+          <button class="btn-filter-reset-chip" onclick="resetFilters()">✕ مسح</button>
+        </div>
+      </div>
+      <div class="filter-result-count" id="filterCount"></div>
+      <div id="violationsList"></div>
+    </div>
+
+    <!-- ── PENDING TAB ── -->
+    <div id="pendingTab" class="hide">
+      <div class="page-header">
+        <div><div class="page-title">⏳ قيد المراجعة</div></div>
+      </div>
+      <div id="pendingList"></div>
+    </div>
+
+    <!-- ── APPROVED TAB ── -->
+    <div id="approvedTab" class="hide">
+      <div class="page-header">
+        <div><div class="page-title">✅ المخالفات الموافق عليها</div></div>
+      </div>
+      <div id="approvedList"></div>
+    </div>
+
+    <!-- ── REJECTED TAB ── -->
+    <div id="rejectedTab" class="hide">
+      <div class="page-header">
+        <div><div class="page-title">❌ المخالفات المرفوضة</div></div>
+      </div>
+      <div id="rejectedList"></div>
+    </div>
+
+    <!-- ── REPORTS TAB ── -->
+    <div id="reportsTab" class="hide">
+      <div class="page-header">
+        <div>
+          <div class="page-title">📈 التقارير الدورية</div>
+          <div class="page-subtitle">ملخص تلقائي يومي وأسبوعي</div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn-dl-report" onclick="downloadReport()">📄 تحميل التقرير PDF</button>
+        </div>
+      </div>
+      <!-- Period selector -->
+      <div class="report-period-btns">
+        <button class="btn-period active" id="periodToday" onclick="setReportPeriod('today')">📅 اليوم</button>
+        <button class="btn-period" id="periodWeek" onclick="setReportPeriod('week')">📆 هذا الأسبوع</button>
+        <button class="btn-period" id="periodMonth" onclick="setReportPeriod('month')">🗓️ هذا الشهر</button>
+        <button class="btn-period" id="periodAll" onclick="setReportPeriod('all')">📊 الكل</button>
+      </div>
+      <!-- KPI Row -->
+      <div class="report-grid" id="reportKPIs"></div>
+      <!-- Tables -->
+      <div class="charts-grid">
+        <div class="card">
+          <div class="card-header"><h3>👮 أنشط المفتشين</h3></div>
+          <div class="card-body" id="reportInspectors"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>🏢 أكثر الشركات</h3></div>
+          <div class="card-body" id="reportCompanies"></div>
+        </div>
+      </div>
+      <div class="charts-grid" style="margin-top:16px;">
+        <div class="card">
+          <div class="card-header"><h3>📍 توزيع المناطق</h3></div>
+          <div class="card-body" id="reportZones"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>⚠️ أنواع المخالفات</h3></div>
+          <div class="card-body" id="reportTypes"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── WHATSAPP SETTINGS TAB ── -->
+    <div id="waSettingsTab" class="hide">
+      <div class="page-header">
+        <div>
+          <div class="page-title">💬 إعدادات الإشعارات</div>
+          <div class="page-subtitle">إشعارات واتساب والبريد الإلكتروني عند تسجيل مخالفة</div>
+        </div>
+      </div>
+
+      <!-- ═══ اختيار نوع الإشعار ═══ -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header"><h3>🔔 طريقة الإشعار</h3></div>
+        <div class="card-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:10px;padding:14px 20px;background:rgba(37,211,102,0.08);border:1px solid rgba(37,211,102,0.25);border-radius:12px;cursor:pointer;flex:1;min-width:200px;">
+              <label class="toggle-switch">
+                <input type="checkbox" id="notifWhatsApp" onchange="saveWASettings()" checked>
+                <span class="toggle-slider"></span>
+              </label>
+              <span style="font-size:14px;font-weight:700;color:#25d366;">💬 واتساب</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;padding:14px 20px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:12px;cursor:pointer;flex:1;min-width:200px;">
+              <label class="toggle-switch">
+                <input type="checkbox" id="notifEmail" onchange="saveWASettings()">
+                <span class="toggle-slider"></span>
+              </label>
+              <span style="font-size:14px;font-weight:700;color:#60a5fa;">📧 بريد إلكتروني</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ إعدادات واتساب ═══ -->
+      <div class="card" id="waSettingsCard">
+        <div class="card-header"><h3>💬 إعدادات واتساب</h3></div>
+        <div class="card-body">
+          <div class="wa-settings">
+            <h4>📲 إشعار واتساب تلقائي</h4>
+            <div class="wa-toggle">
+              <label class="toggle-switch">
+                <input type="checkbox" id="waEnabled" onchange="saveWASettings()">
+                <span class="toggle-slider"></span>
+              </label>
+              <span style="font-size:13px;color:var(--text);">تفعيل إشعارات واتساب عند تسجيل مخالفة</span>
+            </div>
+            <div class="form-section">
+              <label class="form-label">📱 أرقام الجوال للإشعار (مع رمز الدولة)</label>
+              <div id="waNumbers">
+                <div class="wa-number-row" style="margin-bottom:8px;">
+                  <input class="form-input wa-number-input" type="tel" placeholder="مثال: 966501234567" id="waNum0" onchange="saveWASettings()">
+                  <button class="btn-sm btn-pdf" onclick="removeWANumber(0)">🗑️</button>
+                </div>
+              </div>
+              <button class="btn-sm btn-approve" style="margin-top:8px;" onclick="addWANumber()">➕ إضافة رقم</button>
+            </div>
+            <div class="form-section" style="margin-top:16px;">
+              <label class="form-label">📝 نموذج الرسالة</label>
+              <textarea class="form-textarea" id="waTemplate" rows="5" onchange="saveWASettings()" style="direction:rtl;">⚠️ مخالفة جديدة — نظام القدية
+الرقم: {refNumber}
+النوع: {type}
+الشركة: {company}
+المنطقة: {zone}
+المفتش: {inspector}
+الوقت: {time}</textarea>
+            </div>
+            <div style="margin-top:12px;">
+              <button class="btn-primary" style="width:auto;padding:12px 28px;" onclick="testWANotification()">🧪 إرسال رسالة تجريبية</button>
+            </div>
+          </div>
+          <div style="margin-top:16px; padding:14px; background:rgba(255,255,255,0.03); border-radius:10px; font-size:12px; color:var(--muted);">
+            <strong style="color:var(--gold);">📌 ملاحظة:</strong> الإشعارات تعمل عبر واتساب ويب. عند تسجيل مخالفة، سيفتح واتساب تلقائياً مع الرسالة جاهزة للإرسال.
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ إعدادات البريد الإلكتروني ═══ -->
+      <div class="card" id="emailSettingsCard" style="margin-top:16px;">
+        <div class="card-header"><h3>📧 إعدادات البريد الإلكتروني</h3></div>
+        <div class="card-body">
+          <div class="email-settings">
+            <h4>📧 إشعار البريد الإلكتروني</h4>
+            <div class="wa-toggle" style="margin-bottom:14px;">
+              <label class="toggle-switch">
+                <input type="checkbox" id="emailEnabled" onchange="saveWASettings()">
+                <span class="toggle-slider"></span>
+              </label>
+              <span style="font-size:13px;color:var(--text);">تفعيل إشعارات البريد عند تسجيل مخالفة</span>
+            </div>
+            <div class="form-section">
+              <label class="form-label">📧 عناوين البريد الإلكتروني للإشعار</label>
+              <div id="emailAddresses">
+                <div class="wa-number-row" style="margin-bottom:8px;">
+                  <input class="form-input email-input" type="email" placeholder="مثال: supervisor@qiddiya.com" id="emailAddr0" onchange="saveWASettings()">
+                  <button class="btn-sm btn-pdf" onclick="removeEmailAddress(0)">🗑️</button>
+                </div>
+              </div>
+              <button class="btn-sm btn-approve" style="margin-top:8px;" onclick="addEmailAddress()">➕ إضافة بريد</button>
+            </div>
+            <div class="form-section" style="margin-top:16px;">
+              <label class="form-label">📝 نموذج البريد</label>
+              <textarea class="form-textarea" id="emailTemplate" rows="5" onchange="saveWASettings()" style="direction:rtl;">⚠️ مخالفة جديدة — نظام القدية
+الرقم المرجعي: {refNumber}
+نوع المخالفة: {type}
+الشركة: {company}
+المنطقة: {zone}
+المفتش: {inspector}
+التاريخ والوقت: {time}</textarea>
+            </div>
+            <div style="margin-top:12px;">
+              <button class="btn-primary" style="width:auto;padding:12px 28px;background:linear-gradient(135deg,#3b82f6,#60a5fa);" onclick="testEmailNotification()">🧪 إرسال بريد تجريبي</button>
+            </div>
+          </div>
+          <div style="margin-top:16px; padding:14px; background:rgba(255,255,255,0.03); border-radius:10px; font-size:12px; color:var(--muted);">
+            <strong style="color:#60a5fa;">📌 ملاحظة:</strong> يتم إرسال البريد عبر mailto protocol. سيفتح برنامج البريد مع الرسالة جاهزة للإرسال. يمكنك ربط النظام بخدمة SMTP لإرسال تلقائي.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ADMIN PANEL TAB ── -->
+    <div id="adminPanelTab" class="hide">
+      <div class="page-header">
+        <div>
+          <div class="page-title">🛡️ لوحة المراقب السري</div>
+          <div class="page-subtitle">صلاحيات كاملة — Admin Access Only</div>
+        </div>
+        <button class="btn-sm btn-pdf" onclick="exportAdminReport()" style="padding:10px 18px;font-size:13px;">📊 تصدير تقرير شامل</button>
+      </div>
+      <div id="adminPanelContent"></div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════════════
+const SUPERVISOR_CODES = {
+    "G1-2026": "Group1",
+    "G2-2026": "Group2",
+    "G3-2026": "Group3",
+    "G4-2026": "Group4",
+    "AB-2026": "Group A&B",
+    "QDY-ADMIN-2026": "admin"
+};
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz4Yvkrt9kDjwcyFJcioADLjeKVVP-eXBTPa16UIYnYndLJCdkUhpPU_7kVaOxPbTwAWA/exec';
+
+const allUsers = {
+    "ADMIN": { name: "مراقب النظام — Admin", password: "Qdy#9471@Admin", role: "admin" },
+    "10429": { name: "Naif Faisal Saleh Alharbi", password: "236908", role: "employee" },
+    "11827": { name: "Abdulhadi Mahdi Al-Qahtani", password: "556340", role: "employee" },
+    "12923": { name: "Rakan Bandar Talal Al-Mutairi", password: "935056", role: "employee" },
+    "13182": { name: "Sufayran Mesfer Alhuzri", password: "496130", role: "employee" },
+    "13342": { name: "Ahmed Abdu Mater", password: "513605", role: "employee" },
+    "13359": { name: "Muteb A'id Said Al-Qahtani", password: "941556", role: "employee" },
+    "13360": { name: "Omar theeb Alqahtani", password: "773867", role: "employee" },
+    "13362": { name: "Nasser Abdullah Alqahtani", password: "388952", role: "employee" },
+    "13363": { name: "Nasser Hamoud Al-qahtani", password: "860145", role: "employee" },
+    "13364": { name: "Ziad mohamed Alnuaimi", password: "567181", role: "employee" },
+    "13365": { name: "Mardhi A'id Al-Qahtani", password: "825175", role: "employee" },
+    "13367": { name: "Nayef Saad Hamoud AlQahtani", password: "573735", role: "employee" },
+    "13368": { name: "Ali Saeed Ayed Al Zaidani", password: "351164", role: "employee" },
+    "13369": { name: "Jamal bejad Alqahtani", password: "399567", role: "employee" },
+    "13373": { name: "Fahhad Mosfer Alatffi", password: "990984", role: "employee" },
+    "13374": { name: "Munahi Ali Alqahtani", password: "228346", role: "employee" },
+    "13376": { name: "Ryan Turki Ameen", password: "839398", role: "employee" },
+    "13378": { name: "Sahmi Musnad Alsubaie", password: "844598", role: "employee" },
+    "13379": { name: "Saad Hussain Saad Alsubaie", password: "184099", role: "employee" },
+    "13383": { name: "Saad Mohammed Al-Qahtani", password: "101008", role: "employee" },
+    "13387": { name: "Mohmaad Aloush Alsubaie", password: "363356", role: "employee" },
+    "13388": { name: "Hatim Ali Albishi", password: "648743", role: "employee" },
+    "13389": { name: "Deefallah Abdullah Alharbi", password: "551160", role: "employee" },
+    "13391": { name: "Zaid Saif Zaid Al-Suwailih AlRashid", password: "161850", role: "employee" },
+    "13397": { name: "Sattam Muneer Alqahtani", password: "303857", role: "employee" },
+    "13400": { name: "Raed Ayidh Alqahtani", password: "118402", role: "employee" },
+    "13401": { name: "Badi Khalid Said Al-Otaibi", password: "860532", role: "employee" },
+    "13402": { name: "Abdulrahman A. Alharbi", password: "870905", role: "employee" },
+    "13405": { name: "Basil Bandar Abdulrahman Al-Huwaimel", password: "361900", role: "employee" },
+    "90001": { name: "Sultan Bejad Alqahtani", password: "741852", role: "employee" },
+    "13406": { name: "Abdulaziz Dhafir Al-Qahtani", password: "754279", role: "employee" },
+    "13408": { name: "Bander Bijad Alqahtani", password: "618178", role: "employee" },
+    "13409": { name: "Mohammed Al-Farsani", password: "665466", role: "employee" },
+    "13411": { name: "Khalid Mu'id  Al-Turbush", password: "836309", role: "employee" },
+    "13412": { name: "Jamaan Saleh Alqahtani", password: "707367", role: "employee" },
+    "13414": { name: "Jazaa Habbab Alqahtani", password: "473039", role: "employee" },
+    "13417": { name: "Khalid Abdulaziz Al-Qahtani", password: "561526", role: "employee" },
+    "13418": { name: "Turki Farhan Alqahtani", password: "357489", role: "employee" },
+    "13421": { name: "Jaber Mohammed Alalyani", password: "953146", role: "employee" },
+    "13422": { name: "Faisal Saleh Alqarni", password: "366004", role: "employee" },
+    "13423": { name: "Abdullah Mohammed Al Qahtani", password: "428696", role: "employee" },
+    "13425": { name: "Abdulkhaleq Alghamdi", password: "978246", role: "employee" },
+    "13429": { name: "Farraj A'id Faraj Al-Shahrani", password: "566935", role: "employee" },
+    "13435": { name: "Fahad Snetan Alotaibi", password: "787007", role: "employee" },
+    "13437": { name: "Abdullah Omar Al-Subaie", password: "978216", role: "employee" },
+    "13440": { name: "Abdulaziz Abdullah Alkhudhayri", password: "699445", role: "employee" },
+    "13445": { name: "Abdulrahman Muthkar Alhajri", password: "287527", role: "employee" },
+    "13449": { name: "Hezam Fahad Alqahtani", password: "367979", role: "employee" },
+    "13451": { name: "Ghalib Mohammed Alqahtani", password: "356407", role: "employee" },
+    "13452": { name: "Naif Hassan Alwuthaylah", password: "880070", role: "employee" },
+    "13453": { name: "Sahmi Saeed Alqahtani", password: "488715", role: "employee" },
+    "13454": { name: "Abdulaziz Mohaimeed Alotaibi", password: "456871", role: "employee" },
+    "13455": { name: "Mar'i Ali Hassan Mu'afa", password: "114685", role: "employee" },
+    "13457": { name: "Salah Abdulaziz Mohammed Al Monif", password: "267808", role: "employee" },
+    "13713": { name: "Muhammad Nasser Al-Ghamdi", password: "687901", role: "employee" },
+    "13714": { name: "Youssef Hammoud Al-Rasheed", password: "806762", role: "employee" },
+    "13715": { name: "Fahad Ibrahim Ali Al-Ajam", password: "241193", role: "employee" },
+    "13718": { name: "Nasser Mubarak Al-Qahtani", password: "505864", role: "employee" },
+    "13722": { name: "Nader Hussein Al-Abd Al-Qahtani", password: "899334", role: "employee" },
+    "13732": { name: "Sager Mohammed Al Qahtani", password: "185289", role: "employee" },
+    "13733": { name: "Omar Samil Almoqati", password: "883229", role: "employee" },
+    "13736": { name: "Zamel hathal Alsubaie", password: "831513", role: "employee" },
+    "13739": { name: "Masoud Misfer Saeed Al Yami", password: "438101", role: "employee" },
+    "13903": { name: "Mohammed Haif Monaif Alotaibi", password: "588494", role: "employee" },
+    "13915": { name: "Ibrahim Mohammad Al Qahtani", password: "669940", role: "employee" },
+    "14031": { name: "Fuhaid Abdullah Alsubaie", password: "304665", role: "employee" },
+    "14189": { name: "Abdulaziz Rafi Al Shehri", password: "761843", role: "employee" },
+    "14191": { name: "Abdallah Raed Mohammed Al-Shammari", password: "543063", role: "employee" },
+    "14192": { name: "Abdulhadi Mohammad Al-Ghabawi", password: "492545", role: "employee" },
+    "14196": { name: "Mohammad Ali Mohammad Al-Qahtani", password: "231211", role: "employee" },
+    "14676": { name: "Mohammad Misfer Hamad Al-Qahtani", password: "850763", role: "employee" },
+    "14677": { name: "Ali Shaddad Muhammad Al-Qahtani", password: "436843", role: "employee" },
+    "14678": { name: "Adel Jaber Ahmed Aqeeli", password: "160548", role: "employee" },
+    "14679": { name: "Fayez Ali Hassan Fasal", password: "513680", role: "employee" },
+    "14684": { name: "Fanjal Ayed Nawar Al-Shaibani", password: "779581", role: "employee" },
+    "15069": { name: "Youssef Ali Abdulrahman Al-Shehri", password: "504712", role: "employee" },
+    "15134": { name: "Saud Awad Malfi Al-Anzi", password: "779723", role: "employee" },
+    "15465": { name: "Sultan Ahmed Mohammad Al-Ajam", password: "538766", role: "employee" },
+    "15478": { name: "Abduirahman Haji Saud Al Shammari", password: "759772", role: "employee" },
+    "15556": { name: "Awad Zaid Shadid Al-Harbi", password: "440729", role: "employee" },
+    "15696": { name: "Salah Sattam Menzel Al-Shammari", password: "932904", role: "employee" },
+    "15976": { name: "Fahad Mohammed Abdullah Al-Qahtani", password: "372225", role: "employee" },
+    "15977": { name: "Fahad Mohammed Ahmed Al-Anzi", password: "954918", role: "employee" },
+    "16065": { name: "Ayedh  Sultan bin Obaisan Al-Baqmi", password: "267169", role: "employee" },
+    "16139": { name: "Abdullah Hassan AlShabawi", password: "596834", role: "employee" },
+    "16288": { name: "Mansour Ayed AlKhanfari", password: "442597", role: "employee" },
+    "16474": { name: "Turki Rahil Faraj Al-Mutarfi", password: "757157", role: "employee" },
+    "16516": { name: "Ahmed Abdullah Alrashidi", password: "117253", role: "employee" },
+    "16517": { name: "Faisal Rakan Alqahtani", password: "248789", role: "employee" },
+    "16518": { name: "Badr Hamdan Hamad Al-Nafie", password: "273453", role: "employee" },
+    "16519": { name: "Ahmed Muslam Aljafri", password: "679202", role: "employee" },
+    "16520": { name: "Abdulaziz Salem Hassan Alqahtani", password: "721431", role: "employee" },
+    "16521": { name: "Abdullah Dhaar Alsubai", password: "443854", role: "employee" },
+    "16524": { name: "Khalid Hamoud Almutairi", password: "242152", role: "employee" },
+    "16579": { name: "Khaled Ayed Eid Al-Qahtani", password: "351143", role: "employee" },
+    "16598": { name: "Ahmed Ali Alshahrani", password: "658823", role: "employee" },
+    "16599": { name: "Rashid Omar Al-Lailah", password: "138613", role: "employee" },
+    "16600": { name: "Sultan Matar Sahoud", password: "312498", role: "employee" },
+    "16601": { name: "Ali Hamoud Ali Al-Halafi", password: "982918", role: "employee" },
+    "16602": { name: "Hamed Saleh Alqahtani", password: "366958", role: "employee" },
+    "16604": { name: "Mubarak Bakhit Fahad Al Dosari", password: "189056", role: "employee" },
+    "16607": { name: "Mutab Jafar Alqahtani", password: "517823", role: "employee" },
+    "16608": { name: "Turki Naif Al-Qahtani", password: "433189", role: "employee" },
+    "16610": { name: "Fahad Abdulmahsan Alqahtani", password: "134127", role: "employee" },
+    "17197": { name: "Rakan Nasser Jaithan Al-Otaibi", password: "868026", role: "employee" },
+    "17203": { name: "Nader Khalid Faleh Al-Dosari", password: "566216", role: "employee" },
+    "17206": { name: "Abdulaziz Abdulrahman Al-Mohsen", password: "164005", role: "employee" },
+    "17224": { name: "Mohammed Abdulaziz Nasser Al-Omar", password: "693077", role: "employee" },
+    "17295": { name: "Abdullah Fahid Saleh Al-Ghaidani", password: "469269", role: "employee" },
+    "17302": { name: "Mohsen Naji Mohsen Al-Harthi", password: "414892", role: "employee" },
+    "17447": { name: "Moayyad Hamad Mohammed Al-Qahtani", password: "338788", role: "employee" },
+    "17454": { name: "Hassan Hamoud Fahd Al-Hathal", password: "658167", role: "employee" },
+    "17530": { name: "Khaled Abdulrahman Alkhalifa", password: "523652", role: "employee" },
+    "17533": { name: "Yousef Falhan Al-Harthi", password: "437080", role: "employee" },
+    "17535": { name: "Ayob Basrallah Mohammed Al-Shaher", password: "744954", role: "employee" },
+    "17536": { name: "Fahad Saleh Alqahtani", password: "637360", role: "employee" },
+    "17544": { name: "Mishari Mohammed Al-Qahtani", password: "152835", role: "employee" },
+    "17546": { name: "Abdulrahman Saeed Al-Qahtani", password: "417610", role: "employee" },
+    "17547": { name: "Abdulaziz Ghaleb Suwaileh Al-Harbi", password: "357930", role: "employee" },
+    "17548": { name: "Mishaal Sedah Mohammed Al-Qahtani", password: "556392", role: "employee" },
+    "17551": { name: "Abdulsalam Abdulkarim Nashi Al-Rashidi", password: "590177", role: "employee" },
+    "17834": { name: "Hamoud Misfer Jafen Al-Qahtani", password: "237842", role: "employee" },
+    "17836": { name: "Hamoud Saad Salem Al-Qahtani", password: "203850", role: "employee" },
+    "17840": { name: "Abdullah Muzaybin Nawar Al-Otaibi", password: "587157", role: "employee" },
+    "17842": { name: "Salman Abdullah Ali Ashib", password: "100653", role: "employee" },
+    "17851": { name: "Sultan Suleiman Abdulaziz", password: "611758", role: "employee" },
+    "17853": { name: "Nawaf Abdullah Zayed Al-Otaibi", password: "661460", role: "employee" },
+    "17871": { name: "Mohammed Ibrahim Al Rashidi", password: "290550", role: "employee" },
+    "17996": { name: "Ahmed Essa Abdullah Al Zahrani", password: "602266", role: "employee" },
+    "18063": { name: "Muqbil Ali Muqbil Al-Qahtani", password: "238555", role: "employee" },
+    "18200": { name: "Mohammed Dakhil Saud Al-Qahtani", password: "907196", role: "employee" },
+    "18201": { name: "Sultan Hadi Ghayed Al-Qahtani", password: "569588", role: "employee" },
+    "18202": { name: "Ryan Ayman Mahdi Mohammed", password: "811909", role: "employee" },
+    "18203": { name: "Faisal Saad Nasser Al-Dosari", password: "841573", role: "employee" },
+    "18239": { name: "Amar Mohammed Abdullah Al-Dosari.", password: "616628", role: "employee" },
+    "18402": { name: "Khaled Mohammed Saeed Al-Qahtani", password: "807877", role: "employee" },
+    "18403": { name: "Salem Mubarak Fahad Al-Qahtani", password: "996430", role: "employee" },
+    "18405": { name: "Abdullah Abdulhadi Jaligham", password: "208065", role: "employee" },
+    "18409": { name: "Abdulaziz Saad Al-Rajeh", password: "223459", role: "employee" },
+    "18410": { name: "Omar Mohammed Omar Al-Tamimi", password: "192927", role: "employee" },
+    "18411": { name: "Abdulrahman Safar Hassan Al-Harthi", password: "413367", role: "employee" },
+    "18412": { name: "AlWalid Hussein Saeed Al-Shahrani", password: "536936", role: "employee" },
+    "18413": { name: "Ali Amer Dhafer Al-Qushairy", password: "180239", role: "employee" },
+    "18417": { name: "Malefe Lafi Salman Al-Otaibi", password: "496806", role: "employee" },
+    "18418": { name: "Ahmed Hussein Ahmed Al-Khaiwani", password: "191601", role: "employee" },
+    "18419": { name: "Khaled Omar Marjah Al-Baqmi", password: "696147", role: "employee" },
+    "18420": { name: "Mishaal Jabbar Saadi Al-Ghamdi", password: "479846", role: "employee" },
+    "18550": { name: "Mohammed Abdullah Mosfer Alsubaie", password: "521809", role: "employee" },
+    "18592": { name: "Thamer Ali Fayez Al-Shahrani", password: "922411", role: "employee" },
+    "18593": { name: "Raed Mutrib Owaidh alomairi", password: "562964", role: "employee" },
+    "18594": { name: "Mohanned Yahya Madkhali", password: "953720", role: "employee" },
+    "18595": { name: "Amjad Batal Ghali Al-Mutairi", password: "800761", role: "employee" },
+    "18596": { name: "Azzam Fahd Sunhat Al-Harbi", password: "138556", role: "employee" },
+    "18597": { name: "Abdulmajeed Mohammed Abdullah Al-AsimI", password: "891549", role: "employee" },
+    "18599": { name: "Taher Hilal Wasal Al-Rubaie", password: "729150", role: "employee" },
+    "18602": { name: "Aboud bin Hamad bin Saeed Al-Dosari", password: "658998", role: "employee" },
+    "18604": { name: "Faris Faleh Baraka Al Harbi", password: "946981", role: "employee" },
+    "18605": { name: "Ahmed Faleh Baraka Al Harbi", password: "248018", role: "employee" },
+    "18606": { name: "Abdullah Nasser Mohammed Al-Qahtani", password: "335970", role: "employee" },
+    "18608": { name: "Hamad Mubarak Fadhi Al-Rashidi", password: "189604", role: "employee" },
+    "18609": { name: "Sami Ayed Saud Al-Harbi", password: "627424", role: "employee" },
+    "18610": { name: "Khaled Mohammed Hassan Al-Harbi", password: "746717", role: "employee" },
+    "18611": { name: "Ahmed bin Muhammad bin Ahmed Bahari", password: "559117", role: "employee" },
+    "18612": { name: "Khaled Ghazi Shabab Al-Shaibani", password: "749235", role: "employee" },
+    "18613": { name: "Ali Saeed Mohammed Al-Ahmari", password: "404301", role: "employee" },
+    "18614": { name: "Faisal Ali Mubarak Al-Ahmari", password: "394257", role: "employee" },
+    "18617": { name: "Abdulillah Mufreh Saeed Al-Suhaim", password: "138390", role: "employee" },
+    "18618": { name: "Fahd Rashid Ibrahim Al-Samel", password: "970075", role: "employee" },
+    "18627": { name: "Abdulaziz Mukhaizeem Faraj Al-Qahtani", password: "234373", role: "employee" },
+    "18637": { name: "Saad Ayed Faisal Al-Qahtani", password: "621280", role: "employee" },
+    "18642": { name: "Mubarak Nasser Mohammed Al-Qahtani", password: "749501", role: "employee" },
+    "18644": { name: "Saud Haif Hadi Alsubaie", password: "907663", role: "employee" },
+    "90002": { name: "Fahd Salem Mohammed Al-Jaghwani", password: "635274", role: "employee" },
+    "18645": { name: "Fawaz Abdullah Fawaz Al-Dosari", password: "238693", role: "employee" },
+    "18646": { name: "Khaled Hassan Jabran Qabouli", password: "370603", role: "employee" },
+    "18647": { name: "Abdulkarim Idris Bakr Adam", password: "105623", role: "employee" },
+    "18648": { name: "Badr Atiq Zaid Al-Baqmi", password: "117823", role: "employee" },
+    "18649": { name: "Khaled Majed Mohammed Al-Mubarak", password: "449106", role: "employee" },
+    "18657": { name: "kudaysi Hamad Abdullah Al-Abbas", password: "202218", role: "employee" },
+    "90003": { name: "Ali Hamad Hadi Hamad Al-Qahtani", password: "489013", role: "employee" },
+    "18710": { name: "Nayef Sultan Obaisan Al-Baqmi", password: "494020", role: "employee" },
+    "18727": { name: "Osama Mohammed Hamdan Al-Harbi", password: "372123", role: "employee" },
+    "18728": { name: "Faris Mohammed Shaalan Al-Qarni", password: "924089", role: "employee" },
+    "18731": { name: "Hamdan Saeed Mohammed Al-Hazri", password: "342434", role: "employee" },
+    "18732": { name: "Mohammed Hamoud Faleh Al-Otaibi", password: "363032", role: "employee" },
+    "18734": { name: "Mishbab bin Mubarak bin Mishbab Al-Dosari", password: "534059", role: "employee" },
+    "18737": { name: "Abdullah Salem Al-Qahtani", password: "327393", role: "employee" },
+    "18740": { name: "Nayef Hussein Sharif Al-Khalidi", password: "230022", role: "employee" },
+    "18795": { name: "Saud Ibrahim Saud Al-Qahtani", password: "717412", role: "employee" },
+    "18814": { name: "Ahmed Khalaf Saleh Al-Mahous", password: "462420", role: "employee" },
+    "18866": { name: "Abdullah Mani Mohammed Al-Shabwi", password: "717019", role: "employee" },
+    "18867": { name: "Ryan Saad Khalid Al-Hamali", password: "515134", role: "employee" },
+    "18975": { name: "Dhaher Hamoud Dahwi Al-Shammari", password: "444849", role: "employee" },
+    "18996": { name: "Badr Rashid Bajah Al-Rashidi", password: "900888", role: "employee" },
+    "19000": { name: "Khalid Dhafir Hadi Al-Qahtani", password: "768312", role: "employee" },
+    "19001": { name: "Ziad Baraka Onaizan Al-Rashidi", password: "378414", role: "employee" },
+    "19002": { name: "Waleed Mufrih Al-Shaheeri", password: "651852", role: "employee" },
+    "19003": { name: "Ali Ammar Ali Al-Rashidi", password: "602762", role: "employee" },
+    "19005": { name: "Abdulhadi Faleh Abdulmane Al-Qahtani", password: "291887", role: "employee" },
+    "19007": { name: "Muqrin Fahd Hamdan Al-Harbi", password: "519277", role: "employee" },
+    "19008": { name: "Dhafer Hadi Ayed Al-Shabwi", password: "743465", role: "employee" },
+    "90004": { name: "Abdullah Dhafer Abdulhadi Al-Shahri", password: "327916", role: "employee" },
+    "19009": { name: "Ali Saeed Abdullah Al-Shehri", password: "257558", role: "employee" },
+    "19010": { name: "Fahd Abdullah Ali Al-Qadi", password: "184369", role: "employee" },
+    "19013": { name: "Fahd Fahid Fahd Al-Saadi", password: "566194", role: "employee" },
+    "19050": { name: "Fahad Abdullah Alshabani", password: "899243", role: "employee" },
+    "19051": { name: "Abdulmajeed Moraie Ajran Alrathwan", password: "687652", role: "employee" },
+    "19052": { name: "Khalid Ismail Misfer Al-Dosari", password: "229658", role: "employee" },
+    "19066": { name: "Nidaa Rabah Mohsen Al-Harbi", password: "631512", role: "employee" },
+    "90005": { name: "Abdulrahman Al-Saaran", password: "562038", role: "employee" },
+    "19132": { name: "Mohammed Saud Fayyad Al-Enezi", password: "240474", role: "employee" },
+    "19133": { name: "Yousef Mubarak Satm Al-Harbi", password: "733822", role: "employee" },
+    "19135": { name: "Faisal Abdulrazzaq Jazaa Al-Shammari", password: "731447", role: "employee" },
+    "19139": { name: "Mishaal Mohammed Zayed Al-Mutairi", password: "682009", role: "employee" },
+    "19140": { name: "Mardi Saad Mazid Al-Enezi", password: "667416", role: "employee" },
+    "19141": { name: "Sultan Nasser Shaman Al-Barak Al-Rashidi", password: "322257", role: "employee" },
+    "19142": { name: "Nasser Hussein Kumaihan Al-Dosari", password: "968799", role: "employee" },
+    "19146": { name: "Mohammed Khaled Mansour Al-Hanabija", password: "640354", role: "employee" },
+    "19147": { name: "Talal Hadian Rashid Al-Shakra", password: "489851", role: "employee" },
+    "19149": { name: "Abdullah Fayez Abdullah Al-Dosari", password: "762982", role: "employee" },
+    "19150": { name: "Fahd Mohammed Sabbar Alshammari", password: "731221", role: "employee" },
+    "19151": { name: "Abdulaziz Saud Farhan Al-Harbi", password: "690457", role: "employee" },
+    "19152": { name: "Abdullah Ibrahim Saeed Al-Ghannoum", password: "910075", role: "employee" },
+    "19153": { name: "Mishaal Mohammed Rajih Al-Otaibi", password: "835932", role: "employee" },
+    "19155": { name: "Muath Abdo Mohammed Halawi Sharahili", password: "250901", role: "employee" },
+    "19196": { name: "Abdullah Mahdi Abdullah Al-Dosari", password: "356076", role: "employee" },
+    "19197": { name: "Abdulaziz Muhammad Abdullah Al-Maliki", password: "705576", role: "employee" },
+    "19198": { name: "Mardi Abdulaziz Dahwi Al-Shammari", password: "896166", role: "employee" },
+    "19199": { name: "Nasser Najr Eid Al-Jumaili", password: "899679", role: "employee" },
+    "19200": { name: "Fahd Misfer Fahed Al-Aliani", password: "655366", role: "employee" },
+    "19202": { name: "Hussein Muhammad Ali Al-Shamrani", password: "715220", role: "employee" },
+    "19204": { name: "Badr Baniyah Mukhlif Al Shamri", password: "106339", role: "employee" },
+    "19208": { name: "Abdulwahab Muhammad Mutlaq Al-Dosari", password: "900101", role: "employee" },
+    "19251": { name: "Bassam Obaid Mahshi Alanazi", password: "284838", role: "employee" },
+    "19285": { name: "Naif Falah Musfer Al-Qahtani", password: "671362", role: "employee" },
+    "19286": { name: "Musfer Faisal Mohsen Al-Qahtani", password: "619022", role: "employee" },
+    "19287": { name: "Abdulaziz Ahmed Ali Najmi", password: "237217", role: "employee" },
+    "19289": { name: "Omar Awad Abdullah Al-Anzi", password: "398050", role: "employee" },
+    "19290": { name: "Mohammed Hammad Saleh Alballaji", password: "510715", role: "employee" },
+    "19295": { name: "Mohammed Faleh Ayedh Alqahtani", password: "850330", role: "employee" },
+    "19297": { name: "Sultan Wazie Radhi Alqahtani", password: "449718", role: "employee" },
+    "19299": { name: "Saeed Mohammed Ibrahim Alamari", password: "360882", role: "employee" },
+    "19300": { name: "Khaled Dhaifallah Rzaieq Almokhlafi", password: "806378", role: "employee" },
+    "19302": { name: "Muteeb Musfer Mohammed Al-Asimi", password: "497582", role: "employee" },
+    "19305": { name: "Hamad Hassan Hamad Alqahtani", password: "605428", role: "employee" },
+    "19307": { name: "Mufleh Abdullah Mohammed Alqahtani", password: "220873", role: "employee" },
+    "19308": { name: "Mohannad Falah Hamid Al-Shahrani", password: "990057", role: "employee" },
+    "19309": { name: "Nawaf Ajean Hadeef Al-Otaibi", password: "731588", role: "employee" },
+    "19310": { name: "Abduullah Sarrai Jarallah Alshammari", password: "699681", role: "employee" },
+    "19311": { name: "Abdullah Shaiaan Hamed Alshammari", password: "663749", role: "employee" },
+    "19313": { name: "Abdulrahman Mufleh Faleh Alrashidi", password: "238269", role: "employee" },
+    "19322": { name: "Turki Abdulaziz Nasser Aldawsari", password: "703099", role: "employee" },
+    "19323": { name: "Ahmed Abdulelah Fairooz Alfairooz", password: "412680", role: "employee" },
+    "19324": { name: "Hmoud Mohammed Ghazi Alotaibi", password: "215508", role: "employee" },
+    "19325": { name: "Salem Dhafir Abdullah Al-Qahtani", password: "554189", role: "employee" },
+    "90006": { name: "Hussain khaled Hussain Alsaleh", password: "356787", role: "employee" },
+    "19331": { name: "Faisal Abdullah Dhaifallah Alharbi", password: "764747", role: "employee" },
+    "19340": { name: "Sultan Saad Abdullah Alshali", password: "901454", role: "employee" },
+    "19341": { name: "Fahd Mohammed Awad Al-Mutairi", password: "998525", role: "employee" },
+    "19356": { name: "Khalid Mubarak Mohsen Al-Dosari", password: "537569", role: "employee" },
+    "19360": { name: "Al-Hussein Ali Yahya Jabari", password: "169674", role: "employee" },
+    "19363": { name: "Yazeed Hamad Atiah Al-Anzi", password: "668245", role: "employee" },
+    "90007": { name: "Khalid Dhafer A'id Al-Qahtani", password: "334053", role: "employee" },
+    "19371": { name: "Abdullah Jabran Hatrosh Al-Maliki", password: "507203", role: "employee" },
+    "19372": { name: "Sami Hassan Jabir", password: "827634", role: "employee" },
+    "19373": { name: "Mohammed Mansour Mohammed Al-Ratqi", password: "257862", role: "employee" },
+    "19375": { name: "Abdullah Amash Samran Al-Mutairi", password: "485338", role: "employee" },
+    "19376": { name: "Ibrahim Mohammed Abdullah Al-Mutairi", password: "924511", role: "employee" },
+    "19377": { name: "Faris Fahid Maayouf Al-Qahtani", password: "593409", role: "employee" },
+    "19378": { name: "Abdulrahman Salman Abdulrahman bin Salman", password: "432369", role: "employee" },
+    "19389": { name: "Naif Muneef Naif Al-Hamadi", password: "484961", role: "employee" },
+    "19393": { name: "Mohammed Abdulrahman Mohammed Al-Shahri", password: "145276", role: "employee" },
+    "19394": { name: "Falih Mohammed Falih Al-Mahdani", password: "605903", role: "employee" },
+    "19400": { name: "Faisal Salem Al-Qahtani", password: "152103", role: "employee" },
+    "19401": { name: "Abdullah Obaid Al-Qahtani", password: "838182", role: "employee" },
+    "19402": { name: "Mubarak Awda Mohammed Al-Shahrani", password: "609514", role: "employee" },
+    "19413": { name: "Ahmed Mosaad Aida Al-Malki", password: "516182", role: "employee" },
+    "19542": { name: "Sultan Mohammed Metriq Almaawi", password: "293146", role: "employee" },
+    "19543": { name: "Faisal Aqal Altemyani", password: "289134", role: "employee" },
+    "19550": { name: "Fahad Mohammed Mlaif Alsubaie", password: "842547", role: "employee" },
+    "19551": { name: "Mohammed Fahad Abdullah Alessa", password: "254602", role: "employee" },
+    "19559": { name: "Bander Moshabbeb Mohammed Alqahtani", password: "250849", role: "employee" },
+    "19560": { name: "Nader Mohammed Taher Talbi", password: "259319", role: "employee" },
+    "19566": { name: "Faris Naif Alotaibi", password: "573683", role: "employee" },
+    "19568": { name: "Wafi Aiesh Alanezi", password: "220417", role: "employee" },
+    "19569": { name: "Muteb Yahya Muteb Al-Murmash", password: "780676", role: "employee" },
+    "19571": { name: "Adel Saad Saeed Alqahtani", password: "700957", role: "employee" },
+    "19658": { name: "Faisal Mohammed  Mas'ood Al-Mansoor", password: "820515", role: "employee" },
+    "19660": { name: "Nasser bin Ahmad bin Nasser Al-Mutawa", password: "849959", role: "employee" },
+    "19662": { name: "Mohammed Fahd Abdullah Al-Mughamm", password: "176832", role: "employee" },
+    "19705": { name: "Bader Hadi Hassan Al-Qahtani", password: "262931", role: "employee" },
+    "19706": { name: "Abdulrahman Yahya Abdulrahman Hamdi", password: "714009", role: "employee" },
+    "19708": { name: "Naif Mansour Qbeil Al-Shammari", password: "155260", role: "employee" },
+    "19760": { name: "Obaidullah Abdulhamid Obaidullah Al-Rashedi", password: "490189", role: "employee" },
+    "19761": { name: "Walid Saif Abdulrahman Al-Abisi", password: "561791", role: "employee" },
+    "19762": { name: "Thamer Rashid Jarallah Al-Suhaili", password: "814048", role: "employee" },
+    "19763": { name: "Majed Ashwan Qaid Al-Anzi", password: "164451", role: "employee" },
+    "19764": { name: "Mohammed Zaher Ali Al-Barqi", password: "973180", role: "employee" },
+    "19765": { name: "Mohammed Sardi Saadi Al-Rimali Al-Shammari", password: "999513", role: "employee" },
+    "19766": { name: "Waleed Saeed Masoud Al-Qahtani", password: "804564", role: "employee" },
+    "19767": { name: "Sari Saleh Eid Al-Nuhaity Al-Harbi", password: "269815", role: "employee" },
+    "19768": { name: "Mansour Abdullah Mohammed Al-Qahtani", password: "240828", role: "employee" },
+    "19769": { name: "Salem Suleiman Salem Al-Omairi", password: "298998", role: "employee" },
+    "19771": { name: "Muneef Naif Naif Al-Qahtani", password: "589805", role: "employee" },
+    "19772": { name: "Abdullah Salem Abdullah Al-Waked", password: "238646", role: "employee" },
+    "90008": { name: "Mishaal Mohammed Miyah Al-Shammari", password: "246316", role: "employee" },
+    "19773": { name: "Faisal Mithal Ibrahim Al-Qahtani", password: "666792", role: "employee" },
+    "90009": { name: "Khaled Bassam Al-Anzi", password: "872246", role: "employee" },
+    "19778": { name: "Abdulaziz Nasser Sagheer Al-Shammari", password: "545120", role: "employee" },
+    "19779": { name: "Aaidh Mohammed Shujaa Al-Subaie", password: "892701", role: "employee" },
+    "19782": { name: "Tareq Sayer Hamoud Al-Shammari", password: "862744", role: "employee" },
+    "19785": { name: "Farraj bin Nashaa bin Farraj Al-Subaie", password: "979185", role: "employee" },
+    "19787": { name: "Bandar Atiq Farih Al-Shammari", password: "568930", role: "employee" },
+    "90010": { name: "Omar Sahil Omar Al-Omairi", password: "207473", role: "employee" },
+    "19788": { name: "Mishaal Ibrahim Mani Al-Shammari", password: "800079", role: "employee" },
+    "19789": { name: "Mani Aydh Faleh Al-Qahtani", password: "769302", role: "employee" },
+    "19790": { name: "Waleed Khalid Jihad Al-Anzi", password: "364268", role: "employee" },
+    "19791": { name: "Abdulaziz Fahid Jaafar Al-Qahtani", password: "639005", role: "employee" },
+    "19792": { name: "Faisal Ghanem Mushai Al-Shibani", password: "360652", role: "employee" },
+    "19793": { name: "Ahmed bin Khalid bin Muhammad - Al-Qahtani", password: "132343", role: "employee" },
+    "19794": { name: "Bandar Ali Aaidh Al-Shahrani", password: "474837", role: "employee" },
+    "19795": { name: "Sultan Ayed mohammed Aloaayani", password: "180893", role: "employee" },
+    "19796": { name: "Bandar Faraj Mohammed Al-Shahrani", password: "624492", role: "employee" },
+    "19797": { name: "Salman Ghannam Hassan Al-Qahtani", password: "803591", role: "employee" },
+    "19841": { name: "Nawaf Fahd Faraj Al-Qahtani", password: "603921", role: "employee" },
+    "19842": { name: "Abdullah Jaser Hajad Al-Buqami", password: "618894", role: "employee" },
+    "19843": { name: "Faisal Mohammed Fahd Al-Qahtani", password: "529997", role: "employee" },
+    "19844": { name: "Fahd Saad Aydh Al-Qahtani", password: "691551", role: "employee" },
+    "19845": { name: "Mohammed Misfer Fahid Al-Olayani Al-Qahtani", password: "693198", role: "employee" },
+    "19846": { name: "Mohammed Ali Saleh Al-Shehri", password: "696492", role: "employee" },
+    "19855": { name: "Abdulwahab Hussein Salem Al-Zahrani", password: "805946", role: "employee" },
+    "19857": { name: "Eid Abdullah Eid Al-Otaibi", password: "641856", role: "employee" },
+    "90011": { name: "Jihad Burkan Al Waqian", password: "713485", role: "employee" },
+    "90012": { name: "Mohammad Ahmad Jubran Al Qahtani", password: "876646", role: "employee" },
+    "19860": { name: "Misfer Mutlaq Misfer Al-Dosari", password: "210165", role: "employee" },
+    "19861": { name: "Saad Mohammed Salem Al-Qahtani", password: "906639", role: "employee" },
+    "19863": { name: "Abdullah Obaid Mohammed Al-Shahrani", password: "280460", role: "employee" },
+    "19865": { name: "Mohammed Jaber Mohammed Al-Fifi", password: "338850", role: "employee" },
+    "19866": { name: "Mohammed Najm Dhafer Al-Shahrani", password: "249015", role: "employee" },
+    "19867": { name: "Ahmed Ali Ahmed Al-Nukhaifi", password: "232892", role: "employee" },
+    "19869": { name: "Abdulaziz Mohammed Salem Al-Amiri", password: "349282", role: "employee" },
+    "19870": { name: "Turki Grimel Ali Al-Harbi", password: "824531", role: "employee" },
+    "19871": { name: "Abdulrahman Faisal Namaa Al-Amiri", password: "795217", role: "employee" },
+    "19873": { name: "Abdullah Ibrahim Rashid Bin Kuwaybin", password: "472666", role: "employee" },
+    "19874": { name: "Fahd Saud Ibrahim Al-Otaibi", password: "175074", role: "employee" },
+    "19876": { name: "Faisal Awad Eid Al-Amiri", password: "261933", role: "employee" },
+    "19878": { name: "Jumaan Ayed Jumaan Al-Qahtani", password: "783504", role: "employee" },
+    "19879": { name: "Abdulrahman Mohammed Al-Jarm", password: "279994", role: "employee" },
+    "19880": { name: "Saad Misfer Mohammed Al-Dosari", password: "636523", role: "employee" },
+    "19882": { name: "Saud Ali Mufreh Al-Qahtani", password: "586251", role: "employee" },
+    "19883": { name: "ibrahim abdullah Dhafer Alharthi", password: "123634", role: "employee" },
+    "19884": { name: "Mufleh Fahid Mohammed Al-Qahtani", password: "425465", role: "employee" },
+    "19886": { name: "Khaled Walid Suleiman Al-Shalil", password: "420408", role: "employee" },
+    "20069": { name: "Ahmed Ali Othman Al-Omair", password: "435378", role: "employee" },
+    "20092": { name: "Sultan Saeed bin Shaher", password: "862690", role: "employee" },
+    "20093": { name: "Mohammed Saad Ali Al-Aklabi", password: "686468", role: "employee" },
+    "20094": { name: "Nayef Mishaal Dakhil Allah Al-Mutairi", password: "921581", role: "employee" },
+    "20095": { name: "Abdul Latif Faleh Misfer Al-Otaibi", password: "856130", role: "employee" },
+    "20097": { name: "Saud Abdullah Saud Al-Saluli", password: "575042", role: "employee" },
+    "20101": { name: "Jazea Mubarak Jazea Al-Qahtani", password: "870351", role: "employee" },
+    "20172": { name: "Ryan Dhafer Jazea Al-Qahtani", password: "544352", role: "employee" },
+    "20173": { name: "Ali Saleh Ali Al-Subaie", password: "124601", role: "employee" },
+    "20174": { name: "Salem Ayidh Salem Al-Qahtani", password: "544154", role: "employee" },
+    "20175": { name: "Abdullah Mohammed Al-Qweifel Al-Qahtani", password: "767196", role: "employee" },
+    "20176": { name: "Faisal Ayidh Rafaan Al-Qahtani", password: "970488", role: "employee" },
+    "20363": { name: "Rayan Hamdan Dhafir Al-Harithi", password: "539564", role: "employee" },
+    "20650": { name: "Fahad Ahmed Saeed Al-Waqid", password: "501499", role: "employee" },
+    "20652": { name: "Hisham Ali Kaabi", password: "497342", role: "employee" },
+    "20653": { name: "Khalid Awad Abdullah Al-Ahmari", password: "967277", role: "employee" },
+    "20654": { name: "Nasser Dhafer Zayed Al-Bishi", password: "236010", role: "employee" },
+    "20655": { name: "Saeed Dokhi Hadhinan Al-Khalidi", password: "512686", role: "employee" },
+    "20656": { name: "Salman Majid Salman Al-Omiri", password: "591746", role: "employee" },
+    "20659": { name: "Hamad Ahmed Nasser Al-Hassaneh", password: "347839", role: "employee" },
+    "20662": { name: "Hussein Abdulaziz Mousa Al-Ghamdi", password: "596310", role: "employee" },
+    "20666": { name: "Dhafer Aayed Fahad Al-Arjani", password: "402386", role: "employee" },
+    "20668": { name: "Ali bin Mohammed bin Ali Al-Amri", password: "248570", role: "employee" },
+    "20669": { name: "Mubarak Ishq Al-Qahs Al-Atifi", password: "724037", role: "employee" },
+    "20671": { name: "Sami Muflih Halas Al-Waber Al-Qahtani", password: "545419", role: "employee" },
+    "20673": { name: "Mishal Mohammed Shayiq Al-Hawasilah", password: "391419", role: "employee" },
+    "20675": { name: "Mohammed Majri Faraj Al-Qahtani", password: "728759", role: "employee" },
+    "20677": { name: "Abdulaziz Othman Ayedh Al-Shahrani", password: "479980", role: "employee" },
+    "20679": { name: "Saud Ali Mutrek Al-Dosari", password: "635296", role: "employee" },
+    "20685": { name: "Hamad Nasser Salem Al-Haydar", password: "284313", role: "employee" },
+    "20686": { name: "Nasser Majed Mahdi Al-Subaiyi", password: "147446", role: "employee" },
+    "20687": { name: "Yasser Yahya Shuwail", password: "490887", role: "employee" },
+    "20690": { name: "Maytham Khalid Mohammed Al-Shammari", password: "489221", role: "employee" },
+    "20691": { name: "Majid Abdullah Al-Ghamdi", password: "862052", role: "employee" },
+    "20692": { name: "Mohammed Hassan Al-Jizani", password: "259150", role: "employee" },
+    "20694": { name: "Fahad Bukhitan Hithal Al-Usaimi", password: "740030", role: "employee" },
+    "20695": { name: "Rashid Dhafer Rashid Al-Dosari", password: "841726", role: "employee" },
+    "20696": { name: "Abdullah Saad Mutlaq Al-Sumairi", password: "570575", role: "employee" },
+    "20697": { name: "Faisal Mohammed Wazn Al-Shahri", password: "213832", role: "employee" },
+    "20698": { name: "Nawaf Saeed Faraj Al-Bisher", password: "907638", role: "employee" },
+    "20699": { name: "Khalid bin Saad bin Hamdan bin Ali Al-Harbi", password: "851317", role: "employee" },
+    "20700": { name: "Mutlaq Abdullah Al-Qahtani", password: "902382", role: "employee" },
+    "20701": { name: "Abdulrahman Mohammed bin Ali Al-Omiri", password: "522654", role: "employee" },
+    "20702": { name: "Jawid Hassan Jawid Al-Qahtai", password: "604615", role: "employee" },
+    "90013": { name: "Omar Hadi Farhan Al-Dawas Al-Qahtani", password: "671858", role: "employee" },
+    "20704": { name: "Abdullah Saad Mohsen Al-Shahrani", password: "649616", role: "employee" },
+    "20770": { name: "Saleh Saud Musaad Al-Hinini Al-Harbi", password: "517878", role: "employee" },
+    "20773": { name: "Abdullah Abdulrahman Mohammed Murair", password: "694971", role: "employee" },
+    "20800": { name: "Turki Abdullah Mashbab Al-Ahmari", password: "408332", role: "employee" },
+    "20815": { name: "Naif Hadi Salem Al-Muajbah", password: "331894", role: "employee" },
+    "20818": { name: "Mohammed Fahd Abdullah Al-Ghasham", password: "184430", role: "employee" },
+    "20820": { name: "Mohammed Saad Al-Saad", password: "551742", role: "employee" },
+    "20821": { name: "Abdullah Mohammed Khalaf Al-Asimi", password: "909222", role: "employee" },
+    "20831": { name: "Abdulaziz Ali Ahmed Al Ghamdi", password: "889646", role: "employee" },
+    "20832": { name: "Abdulaziz Yahya Mohammed Madkhali", password: "975144", role: "employee" },
+    "21148": { name: "Nawaf Musaed Hamdan Al-Dosari", password: "960602", role: "employee" },
+    "21150": { name: "Khalid Hamoud Mohammed Al-Qahtani", password: "201459", role: "employee" },
+    "21154": { name: "Abdulmajid Abdulrahman Al-Huwaimil", password: "855979", role: "employee" },
+    "21160": { name: "Salman Ayed Al-Saeedan", password: "484721", role: "employee" },
+    "21195": { name: "Rashid Ayedh Hassan Al-Qahishi", password: "941580", role: "employee" },
+    "21197": { name: "Bassam Masoud Abdullah Al-Masoud", password: "878938", role: "employee" },
+    "21208": { name: "Sultan Fahad Al-Enezi", password: "481056", role: "employee" },
+    "21210": { name: "Abdullah Ali Hamad Al-Shamlan", password: "785243", role: "employee" },
+    "21211": { name: "Abdulrahman Majed Al-Shammari", password: "841591", role: "employee" },
+    "21212": { name: "Khalid Mohammed Hadi Al-Mahamid", password: "335246", role: "employee" },
+    "21213": { name: "Hamad Ali Mahdi Al-Muhamadi", password: "817804", role: "employee" },
+    "21302": { name: "Fayez Awadh Al-Rubaie", password: "675930", role: "employee" },
+    "2157": { name: "Ali Hamad Mohammed Al-Zuarr", password: "828439", role: "employee" },
+    "2168": { name: "Yahya Musa Zailai Ghunaimi", password: "134470", role: "employee" },
+    "3315": { name: "Hamad Abdullah Al-Mutairi", password: "927173", role: "employee" },
+    "52748": { name: "Mishari Mohammed Mutlaq Al-Shaibani Al-Otaibi", password: "746114", role: "employee" },
+    "5862": { name: "Sultan Khaled Sultan Al Subaie", password: "310538", role: "employee" },
+    "6276": { name: "Zaid Saud Nasser Al-Omar", password: "539067", role: "employee" },
+    "6913": { name: "Faisal Awad Malfi Al-Anzi", password: "415844", role: "employee" },
+    "7134": { name: "Abdullah Mohammed Yahya Sak", password: "947811", role: "employee" },
+    "9199": { name: "Ahmed Ibrahim awaji", password: "807897", role: "employee" },
+    "9222": { name: "Ali Saeed Alshahrani", password: "303809", role: "employee" },
+    "9231": { name: "Abdulaziz Abdullah Alanbar", password: "760921", role: "employee" },
+    "9256": { name: "Marzouq Barjas Obaid Al-Dosari", password: "735088", role: "employee" }
+};
+
+// للتوافق مع الكود القديم
+const employees = {};
+Object.keys(allUsers).forEach(id => {
+    employees[id] = allUsers[id].name;
+});
+
+const companyList = [
+            "ABS",
+            "ACES",
+            "ACTS",
+            "AECOM",
+            "AL BAWANI",
+            "AL FUWAILEH",
+            "AL LAITH",
+            "AL LAITH UNITED",
+            "AL MAJAL",
+            "ALABRAQI",
+            "ALAJMI",
+            "ALBAWANI",
+            "ALFUWAYLIH",
+            "ALHAMRA",
+            "ALJABER",
+            "ALKEFAH",
+            "ALMAJAL",
+            "ALTAAQA",
+            "ALTAMIMI",
+            "AMMICO",
+            "APPLUS",
+            "AQUARABIA",
+            "ATKINS",
+            "BBI",
+            "BUJV",
+            "BYRNE",
+            "CITY SEC.",
+            "CURRIE AND BROWN",
+            "DAR ALHANDASAH",
+            "DEWAN",
+            "DOMOPAN",
+            "DR.SULAIMAN HMC",
+            "DSA",
+            "EGIS",
+            "ERGO",
+            "ESA SP",
+            "ESA WTP",
+            "FATHIMA",
+            "FEMCO",
+            "FILM STUDIO",
+            "FIRST C",
+            "FMCO",
+            "GCC",
+            "HAIF",
+            "HARBICO",
+            "IBJV",
+            "IDC",
+            "JACOBS",
+            "JASASRA",
+            "JASH",
+            "KTS",
+            "LANDLABS",
+            "MACE",
+            "MAG",
+            "MASCO",
+            "MCY",
+            "METALYAPI",
+            "MHT",
+            "MOBILY",
+            "NABTAT",
+            "NESMA & PARTNARS",
+            "NESMA - PARTNER, FCC -UP",
+            "NESMA JV",
+            "NESMA PARTNER UP",
+            "NESMA UNITED INDUSTRIES CO. LTD",
+            "NEWFAB",
+            "OLA HOTEL",
+            "ONUR GROUP",
+            "PARSONS",
+            "PROPETY OWNER",
+            "PWC MSI",
+            "QIDDIYA EMPLOYEE",
+            "QIDDIYA SECURITY",
+            "RIYADH EXPRESS",
+            "ROAFID ALAMN",
+            "SAFARI",
+            "SAFCO",
+            "SAFE",
+            "SAJCO",
+            "SALCO",
+            "SATCO",
+            "SATMNA",
+            "SAUDI BAUER",
+            "SAUDI LANDSCAPE - SLC",
+            "SAUDI SICLI",
+            "SFQ BBI",
+            "SHAMAL",
+            "SIGNWORLD",
+            "SISCO",
+            "SIX FLAGS",
+            "SLC",
+            "SNC - TAKEEF (TSJV)",
+            "SOG",
+            "SSD",
+            "SSH",
+            "SUPPLIER",
+            "SWORD OF GOD",
+            "TAJ DHABI",
+            "TAKEEF",
+            "TAMEAR",
+            "TAWAL",
+            "TDP",
+            "TFD",
+            "TSJV TAKEEF",
+            "UCC",
+            "UNIBETON",
+            "UNIMAC"
+        ];
+
+
+const violationCategories = {
+            'مرورية': ['سرعة', 'عكس سير', 'عدم تأمين حمولة', 'وقوف خاطئ', 'عدم وجود رخصة', 'حمولة زائدة', 'القيادة بتهور', 'عدم ربط حزام أمان', 'استخدام جوال', 'عبور دوار بطريقة غير نظامية', 'سحب مركبة غير نظامي', 'أخرى..'],
+            'جنائية': ['وثائق مزورة', 'تخريب', 'انتحال شخصية', 'رشوة', 'سرقة', 'اعتداء', 'صدم وهروب', 'أخرى..'],
+            'عدم_التزام': ['عدم الالتزام بأدوات السلامة', 'عدم تجاوب', 'ورشة غير مصرح لها', 'تنقل على الأقدام', 'محاولة إدخال أشخاص غير مصرح لهم', 'بائع متجول', 'حراسة موقع لغير المصرح له', 'تصوير بدون تصريح', 'دخول غير نظامي', 'أخرى..'],
+            'تصاريح': ['عدم وجود تصريح', 'عدم وجود استكر', 'تصريح منتهي', 'لايوجد تصريح', 'منع دخول']
+        };
+
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+let currentUser = null;
+let currentLoginType = 'employee';
+let violations = [];
+let uploadedImages = [];
+let currentLocation = null;
+let map = null;
+let marker = null;
+let lastViolation = null;
+let companyDropdownOpen = false;
+let charts = {};
+
+// ══════════════════════════════════════════════════════
+// STORAGE
+// ══════════════════════════════════════════════════════
+function saveToStorage() {
+  localStorage.setItem('violations', JSON.stringify(violations));
+  updateBadge();
+}
+function loadFromStorage() {
+  const s = localStorage.getItem('violations');
+  if (s) { violations = JSON.parse(s); }
+  updateBadge();
+}
+function updateBadge() {
+  document.getElementById('excelBadge').textContent = violations.length;
+}
+
+// ══════════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════════
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = type==='error' ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)';
+  t.style.color = type==='error' ? '#f87171' : '#34d399';
+  t.style.borderColor = type==='error' ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)';
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 3000);
+}
+
+// ══════════════════════════════════════════════════════
+// MOBILE SIDEBAR
+// ══════════════════════════════════════════════════════
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar')?.classList.remove('open');
+  document.getElementById('sidebarOverlay')?.classList.remove('show');
+}
+
+// ══════════════════════════════════════════════════════
+// BOTTOM NAV (MOBILE)
+// ══════════════════════════════════════════════════════
+function buildBottomNav(role) {
+  const nav = document.getElementById('mobileBottomNav');
+  if (!nav) return;
+  const items = (role === 'supervisor' || role === 'admin')
+    ? [
+        { id:'dashboard', icon:'📊', label:'إحصائيات' },
+        { id:'pending',   icon:'⏳', label:'مراجعة', badge:'pendingCount' },
+        { id:'approved',  icon:'✅', label:'موافق' },
+        { id:'myViolations', icon:'📋', label:'السجل' },
+        { id:'reports',   icon:'📈', label:'تقارير' },
+      ]
+    : [
+        { id:'dashboard',    icon:'📊', label:'إحصائيات' },
+        { id:'form',         icon:'📝', label:'تسجيل' },
+        { id:'myViolations', icon:'📋', label:'السجل' },
+      ];
+
+  nav.innerHTML = items.map(item => `
+    <button class="bottom-nav-item" id="bn_${item.id}" onclick="showTabMobile('${item.id}')">
+      <div class="bottom-nav-wrap">
+        <span class="bn-icon">${item.icon}</span>
+        ${item.badge ? `<span class="bottom-nav-badge" id="${item.badge}" style="display:none;"></span>` : ''}
+      </div>
+      <span>${item.label}</span>
+    </button>
+  `).join('');
+}
+
+function showTabMobile(tab) {
+  closeSidebar();
+  showTab(tab);
+  // Update bottom nav active
+  document.querySelectorAll('.bottom-nav-item').forEach(btn => btn.classList.remove('active'));
+  const active = document.getElementById('bn_'+tab);
+  if (active) active.classList.add('active');
+}
+
+function updatePendingBadge() {
+  const pending = violations.filter(v => v.status === 'pending');
+  const badge = document.getElementById('pendingCount');
+  if (badge) {
+    badge.style.display = pending.length ? 'block' : 'none';
+    badge.textContent = pending.length;
+  }
+}
+
+// Override buildSidebarNav to also build bottom nav
+const _origBuildSidebarNav = buildSidebarNav;
+
+// ══════════════════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════════════════
+function switchLoginTab(type) {
+  currentLoginType = type;
+  document.getElementById('empTab').classList.toggle('active', type==='employee');
+  document.getElementById('supTab').classList.toggle('active', type==='supervisor');
+  const adminTab = document.getElementById('adminTab');
+  if (adminTab) adminTab.classList.toggle('active', type==='admin');
+  document.getElementById('supervisorCodeField').style.display = type==='supervisor' ? 'block' : 'none';
+  // For admin: pre-fill the employee id field hint
+  const empIdField = document.getElementById('employeeId');
+  if (type === 'admin') {
+    empIdField.placeholder = 'ADMIN';
+  } else {
+    empIdField.placeholder = 'أدخل الرقم الوظيفي';
+  }
+  if (type==='employee' || type==='admin') document.getElementById('supervisorCode').value = '';
+}
+
+function login() {
+  const empId = document.getElementById('employeeId').value.trim();
+  const password = document.getElementById('userPassword').value.trim();
+  const errDiv = document.getElementById('loginError');
+  errDiv.style.display = 'none';
+
+  if (!empId || !password) {
+    errDiv.textContent = '❌ الرجاء إدخال الرقم الوظيفي والرقم السري';
+    errDiv.style.display = 'block'; return;
+  }
+  // Admin direct login
+  if (currentLoginType === 'admin') {
+    if (empId !== 'ADMIN') {
+      errDiv.textContent = '❌ رقم المراقب غير صحيح — استخدم ADMIN';
+      errDiv.style.display = 'block'; return;
+    }
+    if (!allUsers['ADMIN'] || allUsers['ADMIN'].password !== password) {
+      errDiv.textContent = '❌ كلمة المرور غير صحيحة';
+      errDiv.style.display = 'block'; return;
+    }
+    // Admin logged in
+    currentUser = { id: 'ADMIN', name: allUsers['ADMIN'].name, role: 'admin', group: 'admin' };
+    document.getElementById('loginPage').classList.add('hide');
+    document.getElementById('mainApp').classList.remove('hide');
+    document.getElementById('userName').textContent = 'مراقب النظام';
+    document.getElementById('userRole').textContent = '🛡️ Admin — صلاحيات كاملة';
+    document.getElementById('excelBtn').style.display = 'flex';
+    buildSidebarNav('admin');
+    showTab('adminPanel');
+    loadFromStorage();
+    return;
+  }
+  if (!allUsers[empId]) {
+    errDiv.textContent = '❌ الرقم الوظيفي غير موجود';
+    errDiv.style.display = 'block'; return;
+  }
+  const user = allUsers[empId];
+  if (user.password !== password) {
+    errDiv.textContent = '❌ الرقم السري غير صحيح';
+    errDiv.style.display = 'block'; return;
+  }
+
+  let finalRole = 'employee';
+  let supervisorGroup = null;
+  if (currentLoginType === 'supervisor') {
+    const supCode = document.getElementById('supervisorCode').value.trim();
+    if (!supCode) {
+      errDiv.textContent = '❌ الرجاء إدخال رمز المشرف';
+      errDiv.style.display = 'block'; return;
+    }
+    if (!SUPERVISOR_CODES[supCode]) {
+      errDiv.textContent = '❌ رمز المشرف غير صحيح! تواصل مع المسؤول للحصول على رمزك';
+      errDiv.style.display = 'block'; return;
+    }
+    supervisorGroup = SUPERVISOR_CODES[supCode];
+    finalRole = supervisorGroup === 'admin' ? 'admin' : 'supervisor';
+  }
+
+  currentUser = { id: empId, name: user.name, role: finalRole, group: supervisorGroup };
+  document.getElementById('loginPage').classList.add('hide');
+  document.getElementById('mainApp').classList.remove('hide');
+  document.getElementById('userName').textContent = currentUser.name;
+  document.getElementById('userRole').textContent =
+    finalRole === 'admin'      ? '🛡️ مراقب سري — Admin' :
+    finalRole === 'supervisor' ? '👔 مشرف — ' + (supervisorGroup || '') :
+                                 '👤 موظف';
+
+  buildSidebarNav(finalRole);
+  if (finalRole === 'supervisor' || finalRole === 'admin') {
+    document.getElementById('excelBtn').style.display = 'flex';
+    showTab('dashboard');
+  } else {
+    showTab('form');
+  }
+  loadFromStorage();
+}
+
+function logout() {
+  currentUser = null;
+  currentLoginType = 'employee';
+  document.getElementById('mainApp').classList.add('hide');
+  document.getElementById('loginPage').classList.remove('hide');
+  document.getElementById('employeeId').value = '';
+  document.getElementById('userPassword').value = '';
+  document.getElementById('supervisorCode').value = '';
+  document.getElementById('supervisorCodeField').style.display = 'none';
+  document.getElementById('empTab').classList.add('active');
+  document.getElementById('supTab').classList.remove('active');
+  const aTab = document.getElementById('adminTab');
+  if (aTab) aTab.classList.remove('active');
+  document.getElementById('employeeId').placeholder = 'أدخل الرقم الوظيفي';
+  document.getElementById('excelBtn').style.display = 'none';
+  // destroy charts
+  Object.values(charts).forEach(c => c && c.destroy());
+  charts = {};
+}
+
+// ══════════════════════════════════════════════════════
+// SIDEBAR NAV
+// ══════════════════════════════════════════════════════
+const employeeNavItems = [
+  { id:'dashboard', icon:'📊', label:'الإحصائيات' },
+  { id:'form', icon:'📝', label:'تسجيل مخالفة' },
+  { id:'myViolations', icon:'📋', label:'سجل المخالفات' },
+];
+const supervisorNavItems = [
+  { id:'dashboard', icon:'📊', label:'الإحصائيات' },
+  { id:'reports', icon:'📈', label:'التقارير الدورية' },
+  { id:'pending', icon:'⏳', label:'قيد المراجعة' },
+  { id:'approved', icon:'✅', label:'موافق عليها' },
+  { id:'rejected', icon:'❌', label:'مرفوضة' },
+  { id:'myViolations', icon:'📋', label:'كل المخالفات' },
+  { id:'waSettings', icon:'💬', label:'إعدادات الإشعارات' },
+];
+const adminNavItems = [
+  { id:'dashboard', icon:'📊', label:'الإحصائيات الكاملة' },
+  { id:'reports',   icon:'📈', label:'التقارير الدورية' },
+  { id:'pending',   icon:'⏳', label:'قيد المراجعة' },
+  { id:'approved',  icon:'✅', label:'موافق عليها' },
+  { id:'rejected',  icon:'❌', label:'مرفوضة' },
+  { id:'myViolations', icon:'📋', label:'كل المخالفات' },
+  { id:'waSettings',icon:'💬', label:'إعدادات الإشعارات' },
+  { id:'adminPanel',icon:'🛡️', label:'لوحة المراقب' },
+];
+
+function buildSidebarNav(role) {
+  const items = role === 'admin' ? adminNavItems : role === 'supervisor' ? supervisorNavItems : employeeNavItems;
+  const nav = document.getElementById('sidebarNav');
+  nav.innerHTML = items.map(item => `
+    <div class="nav-item" id="nav_${item.id}" onclick="showTabMobile('${item.id}')">
+      <span class="nav-icon" style="font-size:22px;">${item.icon}</span>
+      <span>${item.label}</span>
+    </div>
+  `).join('');
+  buildBottomNav(role);
+}
+
+function showTab(tab) {
+  const tabs = ['dashboard','form','myViolations','pending','approved','rejected','reports','waSettings','adminPanel'];
+  tabs.forEach(t => {
+    const el = document.getElementById(t+'Tab');
+    if (el) el.classList.add('hide');
+    const nav = document.getElementById('nav_'+t);
+    if (nav) nav.classList.remove('active');
+    const bn = document.getElementById('bn_'+t);
+    if (bn) bn.classList.remove('active');
+  });
+  const target = document.getElementById(tab+'Tab');
+  if (target) target.classList.remove('hide');
+  const navItem = document.getElementById('nav_'+tab);
+  if (navItem) navItem.classList.add('active');
+  const bnItem = document.getElementById('bn_'+tab);
+  if (bnItem) bnItem.classList.add('active');
+
+  if (tab === 'dashboard') renderDashboard();
+  else if (tab === 'myViolations') { applyFilters(); }
+  else if (tab === 'pending') { renderViolationList('pending', 'pendingList', true); updatePendingBadge(); }
+  else if (tab === 'approved') renderViolationList('approved', 'approvedList', false);
+  else if (tab === 'rejected') renderViolationList('rejected', 'rejectedList', false);
+  else if (tab === 'reports') renderReports('today');
+  else if (tab === 'waSettings') loadWASettings();
+  else if (tab === 'adminPanel') renderAdminPanel();
+  updatePendingBadge();
+}
+
+// ══════════════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════════════
+function renderDashboard() {
+  // فلترة حسب الصلاحية:
+  // - الموظف (المفتش): يرى فقط مخالفاته الشخصية
+  // - المشرف: يرى مخالفات مجموعته فقط
+  // - الأدمن: يرى الكل
+  let data = violations;
+  if (currentUser && currentUser.role === 'employee') {
+    data = data.filter(v => v.inspectorId === currentUser.id);
+  } else if (currentUser && currentUser.role === 'supervisor' && currentUser.group) {
+    data = data.filter(v => v.receivingGroup === currentUser.group);
+  }
+
+  // تحديث عنوان اللوحة حسب الصلاحية
+  const subtitle = document.getElementById('dashboardSubtitle');
+  if (subtitle) {
+    if (currentUser?.role === 'employee') subtitle.textContent = '📌 إحصائياتي الشخصية — المخالفات التي سجلتها';
+    else if (currentUser?.role === 'supervisor') subtitle.textContent = `📌 إحصائيات المجموعة: ${currentUser.group}`;
+    else subtitle.textContent = 'نظرة شاملة على جميع المخالفات المسجلة';
+  }
+
+  // فلتر حسب النوع الرئيسي
+  const typeFilter = document.getElementById('dashFilterType')?.value || '';
+  if (typeFilter) {
+    data = data.filter(v => v.mainViolationType === typeFilter);
+  }
+
+  const total    = data.length;
+  const pending  = data.filter(v => v.status==='pending').length;
+  const approved = data.filter(v => v.status==='approved').length;
+  const rejected = data.filter(v => v.status==='rejected').length;
+  const today    = new Date().toLocaleDateString('ar-SA');
+  const todayCount = data.filter(v => v.date === today).length;
+  const approvalRate = total > 0 ? Math.round((approved / total) * 100) : 0;
+
+  // بطاقات الإحصائيات
+  document.getElementById('statCards').innerHTML = `
+    <div class="stat-card gold"><div class="stat-icon">📋</div><div class="stat-value">${total}</div><div class="stat-label">إجمالي المخالفات</div></div>
+    <div class="stat-card amber"><div class="stat-icon">⏳</div><div class="stat-value">${pending}</div><div class="stat-label">قيد المراجعة</div></div>
+    <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-value">${approved}</div><div class="stat-label">موافق عليها</div></div>
+    <div class="stat-card red"><div class="stat-icon">❌</div><div class="stat-value">${rejected}</div><div class="stat-label">مرفوضة</div></div>
+    <div class="stat-card blue"><div class="stat-icon">📅</div><div class="stat-value">${todayCount}</div><div class="stat-label">مخالفات اليوم</div></div>
+    <div class="stat-card" style="--accent:rgba(168,85,247,0.15);border-color:rgba(168,85,247,0.3);"><div class="stat-icon">📈</div><div class="stat-value">${approvalRate}%</div><div class="stat-label">نسبة الموافقة</div></div>
+  `;
+
+  const chartDefaults = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color:'#e2e8f0', font:{ family:'Tajawal', size:11 } } } }
+  };
+  const barScales = { scales:{ x:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'}}, y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'}} } };
+  const colors8 = ['rgba(212,175,55,0.8)','rgba(239,68,68,0.8)','rgba(16,185,129,0.8)','rgba(59,130,246,0.8)','rgba(168,85,247,0.8)','rgba(245,158,11,0.8)','rgba(236,72,153,0.8)','rgba(14,165,233,0.8)'];
+
+  // ── النوع الرئيسي (doughnut)
+  const byType = {};
+  data.forEach(v => { byType[v.mainViolationTypeLabel] = (byType[v.mainViolationTypeLabel]||0)+1; });
+  renderChart('chartByType', 'doughnut', Object.keys(byType), Object.values(byType), colors8, chartDefaults);
+
+  // ── النوع الفرعي (horizontal bar - أعلى 12)
+  const bySubType = {};
+  data.forEach(v => { if(v.subViolationType) bySubType[v.subViolationType] = (bySubType[v.subViolationType]||0)+1; });
+  const topSub = Object.entries(bySubType).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  renderChart('chartBySubType', 'bar', topSub.map(s=>s[0]), topSub.map(s=>s[1]), colors8,
+    {...chartDefaults, indexAxis:'y', plugins:{...chartDefaults.plugins, legend:{display:false}}, ...barScales});
+
+  // ── حالة المخالفات (bar)
+  renderChart('chartByStatus', 'bar', ['قيد المراجعة','موافق عليها','مرفوضة'], [pending, approved, rejected],
+    ['rgba(245,158,11,0.8)','rgba(16,185,129,0.8)','rgba(239,68,68,0.8)'], {...chartDefaults, ...barScales});
+
+  // ── حسب المنطقة (bar)
+  const byZone = {};
+  data.forEach(v => { if(v.zone) byZone[v.zone]=(byZone[v.zone]||0)+1; });
+  renderChart('chartByZone', 'bar', Object.keys(byZone), Object.values(byZone), colors8, {...chartDefaults, ...barScales});
+
+  // ── حسب الشفت (doughnut)
+  const byShift = {};
+  data.forEach(v => { if(v.shift) byShift['Shift '+v.shift]=(byShift['Shift '+v.shift]||0)+1; });
+  renderChart('chartByShift', 'doughnut', Object.keys(byShift), Object.values(byShift), ['#ffd700','#10b981','#3b82f6'], chartDefaults);
+
+  // ── حسب المجموعة (bar)
+  const byGroup = {};
+  data.forEach(v => { if(v.receivingGroup) byGroup[v.receivingGroup]=(byGroup[v.receivingGroup]||0)+1; });
+  renderChart('chartByGroup', 'bar', Object.keys(byGroup), Object.values(byGroup), colors8, {...chartDefaults, ...barScales});
+
+  // ── أكثر الشركات (horizontal bar - أعلى 10)
+  const coCounts = {};
+  data.forEach(v => { if(v.companyName) coCounts[v.companyName]=(coCounts[v.companyName]||0)+1; });
+  const topCoChart = Object.entries(coCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  renderChart('chartByCompany', 'bar', topCoChart.map(c=>c[0]), topCoChart.map(c=>c[1]), colors8,
+    {...chartDefaults, indexAxis:'y', plugins:{...chartDefaults.plugins, legend:{display:false}}, ...barScales});
+
+  // ── مخالفات الشركات حسب النوع (stacked bar - أعلى 8 شركات)
+  const topCoNames = topCoChart.slice(0,8).map(c=>c[0]);
+  const typeLabels = [...new Set(data.map(v=>v.mainViolationTypeLabel))];
+  const stackedDatasets = typeLabels.map((type, i) => ({
+    label: type,
+    data: topCoNames.map(co => data.filter(v => v.companyName===co && v.mainViolationTypeLabel===type).length),
+    backgroundColor: colors8[i % colors8.length],
+    borderRadius: 4,
+  }));
+  if (charts['chartCompanyByType']) charts['chartCompanyByType'].destroy();
+  const ctxCT = document.getElementById('chartCompanyByType')?.getContext('2d');
+  if (ctxCT) {
+    charts['chartCompanyByType'] = new Chart(ctxCT, {
+      type: 'bar',
+      data: { labels: topCoNames, datasets: stackedDatasets },
+      options: {
+        ...chartDefaults, indexAxis:'y',
+        plugins: { ...chartDefaults.plugins, legend: { position:'bottom', labels: { color:'#e2e8f0', font:{family:'Tajawal',size:10} } } },
+        scales: {
+          x: { stacked:true, ticks:{color:'#94a3b8'}, grid:{color:'rgba(255,255,255,0.05)'} },
+          y: { stacked:true, ticks:{color:'#94a3b8',font:{size:10}}, grid:{color:'rgba(255,255,255,0.05)'} }
+        }
+      }
+    });
+  }
+
+  // ── قوائم أعلى الشركات والمفتشين
+  const topCo = Object.entries(coCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const maxCo = topCo[0]?.[1] || 1;
+  document.getElementById('topCompanies').innerHTML = topCo.length
+    ? topCo.map(([name,count],i) => `<li><div class="top-rank">${i+1}</div><div class="top-name">${name}</div><div class="top-bar-wrap"><div class="top-bar" style="width:${(count/maxCo)*100}%"></div></div><div class="top-count">${count}</div></li>`).join('')
+    : '<li style="color:var(--muted);padding:20px 0;text-align:center;">لا توجد بيانات</li>';
+
+  const insCounts = {};
+  data.forEach(v => { if(v.inspector) insCounts[v.inspector]=(insCounts[v.inspector]||0)+1; });
+  const topIns = Object.entries(insCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const maxIns = topIns[0]?.[1] || 1;
+  document.getElementById('topInspectors').innerHTML = topIns.length
+    ? topIns.map(([name,count],i) => `<li><div class="top-rank">${i+1}</div><div class="top-name">${name}</div><div class="top-bar-wrap"><div class="top-bar" style="width:${(count/maxIns)*100}%"></div></div><div class="top-count">${count}</div></li>`).join('')
+    : '<li style="color:var(--muted);padding:20px 0;text-align:center;">لا توجد بيانات</li>';
+
+  // ── جدول تفصيلي: النوع الرئيسي × الفرعي × الشركات
+  const typeMap = {};
+  data.forEach(v => {
+    const main = v.mainViolationTypeLabel || 'غير محدد';
+    const sub = v.subViolationType || 'غير محدد';
+    if (!typeMap[main]) typeMap[main] = {};
+    if (!typeMap[main][sub]) typeMap[main][sub] = { count:0, companies:{} };
+    typeMap[main][sub].count++;
+    const co = v.companyName || 'غير محدد';
+    typeMap[main][sub].companies[co] = (typeMap[main][sub].companies[co]||0) + 1;
+  });
+
+  let tableHtml = `<table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead><tr style="background:rgba(212,175,55,0.15);">
+      <th style="padding:12px;border:1px solid rgba(212,175,55,0.2);color:var(--gold);text-align:right;">النوع الرئيسي</th>
+      <th style="padding:12px;border:1px solid rgba(212,175,55,0.2);color:var(--gold);text-align:right;">النوع الفرعي</th>
+      <th style="padding:12px;border:1px solid rgba(212,175,55,0.2);color:var(--gold);text-align:center;">العدد</th>
+      <th style="padding:12px;border:1px solid rgba(212,175,55,0.2);color:var(--gold);text-align:right;">أكثر الشركات</th>
+    </tr></thead><tbody>`;
+
+  const mainTypes = Object.entries(typeMap).sort((a,b) => {
+    const totalA = Object.values(a[1]).reduce((s,v)=>s+v.count,0);
+    const totalB = Object.values(b[1]).reduce((s,v)=>s+v.count,0);
+    return totalB - totalA;
+  });
+
+  mainTypes.forEach(([main, subs]) => {
+    const sortedSubs = Object.entries(subs).sort((a,b) => b[1].count - a[1].count);
+    const mainTotal = sortedSubs.reduce((s,v) => s+v[1].count, 0);
+    sortedSubs.forEach(([sub, info], i) => {
+      const topCos = Object.entries(info.companies).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([n,c])=>`${n} (${c})`).join('، ');
+      tableHtml += `<tr style="border-bottom:1px solid rgba(255,255,255,0.05);${i===0?'border-top:2px solid rgba(212,175,55,0.3);':''}">
+        ${i===0 ? `<td rowspan="${sortedSubs.length}" style="padding:10px;border:1px solid rgba(212,175,55,0.15);font-weight:700;color:var(--gold-light);vertical-align:top;">${main}<br><span style="font-size:11px;color:var(--muted);">(${mainTotal})</span></td>` : ''}
+        <td style="padding:10px;border:1px solid rgba(212,175,55,0.1);">${sub}</td>
+        <td style="padding:10px;border:1px solid rgba(212,175,55,0.1);text-align:center;font-weight:700;color:var(--gold);">${info.count}</td>
+        <td style="padding:10px;border:1px solid rgba(212,175,55,0.1);font-size:12px;color:var(--muted);">${topCos}</td>
+      </tr>`;
+    });
+  });
+
+  tableHtml += '</tbody></table>';
+  document.getElementById('subTypeTable').innerHTML = data.length ? tableHtml : '<div style="text-align:center;color:var(--muted);padding:30px;">لا توجد بيانات</div>';
+}
+
+function renderChart(id, type, labels, data, colors, opts) {
+  if (charts[id]) { charts[id].destroy(); }
+  const ctx = document.getElementById(id)?.getContext('2d');
+  if (!ctx) return;
+  const finalOpts = {...opts};
+  if (opts.indexAxis) { finalOpts.indexAxis = opts.indexAxis; }
+  charts[id] = new Chart(ctx, {
+    type,
+    data: {
+      labels,
+      datasets:[{
+        data,
+        backgroundColor: colors,
+        borderColor: type==='doughnut' ? 'rgba(0,0,0,0.2)' : colors,
+        borderWidth: 1, borderRadius: type==='bar' ? 6 : 0,
+      }]
+    },
+    options: finalOpts
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// REPEAT OFFENDER DETECTION
+// ══════════════════════════════════════════════════════
+function getRepeatInfo(v, excludeSelf = true) {
+  const all = excludeSelf ? violations.filter(x => x.refNumber !== v.refNumber) : violations;
+  const result = { plate: [], id: [] };
+  // تتبع اللوحة والهوية فقط — الشركات مستثناة
+  if (v.vehiclePlate && v.vehiclePlate.trim()) {
+    result.plate = all.filter(x => x.vehiclePlate && x.vehiclePlate.trim().toUpperCase() === v.vehiclePlate.trim().toUpperCase());
+  }
+  if (v.violatorId && v.violatorId.trim()) {
+    result.id = all.filter(x => x.violatorId && x.violatorId.trim() === v.violatorId.trim());
+  }
+  return result;
+}
+
+function repeatWarningHTML(v) {
+  const r = getRepeatInfo(v);
+  const lines = [];
+  if (r.plate.length) {
+    const dates = r.plate.map(x=>`${x.date} (${x.mainViolationTypeLabel||x.subViolationType})`).join(' | ');
+    lines.push(`<div class="rw-item">🚗 لوحة المركبة <span>${v.vehiclePlate}</span> سُجِّلت مخالفة قبل ذلك: <span>${r.plate.length}x</span> — ${dates}</div>`);
+  }
+  if (r.id.length) {
+    const dates = r.id.map(x=>`${x.date} (${x.mainViolationTypeLabel||x.subViolationType})`).join(' | ');
+    lines.push(`<div class="rw-item">🪪 رقم الهوية <span>${v.violatorId}</span> سُجِّل مخالفة سابقاً: <span>${r.id.length}x</span> — ${dates}</div>`);
+  }
+
+  if (!lines.length) return '';
+  return `<div class="repeat-warning"><div class="rw-title">⚠️ مخالف متكرر!</div>${lines.join('')}</div>`;
+}
+
+function repeatBadgesHTML(v) {
+  const r = getRepeatInfo(v);
+  let html = '';
+  if (r.plate.length)   html += `<span class="repeat-badge plate">🚗 لوحة ×${r.plate.length}</span>`;
+  if (r.id.length)      html += `<span class="repeat-badge id">🪪 هوية ×${r.id.length}</span>`;
+
+  return html;
+}
+
+// تحقق عند إدخال بيانات النموذج
+function checkRepeatOnForm() {
+  const plate = (document.getElementById('vehiclePlate')?.value || '').trim().toUpperCase();
+  const id    = (document.getElementById('violatorId')?.value || '').trim();
+  const alerts = [];
+
+  if (plate) {
+    const m = violations.filter(x => x.vehiclePlate && x.vehiclePlate.trim().toUpperCase() === plate);
+    if (m.length) alerts.push(`🚗 لوحة المركبة <b>${plate}</b> مسجلة ${m.length} مخالفة سابقة — آخرها: ${m[m.length-1].date}`);
+  }
+  if (id) {
+    const m = violations.filter(x => x.violatorId && x.violatorId.trim() === id);
+    if (m.length) alerts.push(`🪪 رقم الهوية <b>${id}</b> مسجل ${m.length} مخالفة سابقة — آخرها: ${m[m.length-1].date}`);
+  }
+
+
+  const alertEl = document.getElementById('formRepeatAlert');
+  if (!alertEl) return;
+  if (alerts.length) {
+    alertEl.innerHTML = '⚠️ تنبيه مخالف متكرر!<br>' + alerts.join('<br>');
+    alertEl.style.display = 'block';
+  } else {
+    alertEl.style.display = 'none';
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// VIOLATION CARD RENDER
+// ══════════════════════════════════════════════════════
+function renderViolationList(status, containerId, canReview) {
+  let filtered = status ? violations.filter(v=>v.status===status) : violations;
+  // فلترة حسب مجموعة المشرف (الأدمن يرى الكل)
+  if (currentUser && currentUser.role === 'supervisor' && currentUser.group) {
+    filtered = filtered.filter(v => v.receivingGroup === currentUser.group);
+  }
+  // التأكد من صلاحية الموافقة/الرفض
+  canReview = canReview && currentUser && (currentUser.role === 'supervisor' || currentUser.role === 'admin');
+  renderCards(filtered, containerId, canReview);
+}
+
+function renderCards(list, containerId, canReview) {
+  const div = document.getElementById(containerId);
+  if (!list.length) {
+    div.innerHTML = '<div style="text-align:center;color:var(--muted);padding:48px;">لا توجد مخالفات</div>';
+    return;
+  }
+  div.innerHTML = list.map(v => {
+    const statusClass = v.status==='approved'?'approved':v.status==='rejected'?'rejected':'pending';
+    const statusText  = v.status==='approved'?'✅ موافق عليها':v.status==='rejected'?'❌ مرفوضة':'⏳ قيد المراجعة';
+    const mapsLink    = v.location ? `https://www.google.com/maps?q=${v.location.lat},${v.location.lng}` : null;
+    const repeatBadges = repeatBadgesHTML(v);
+    const repeatWarn   = repeatWarningHTML(v);
+    return `
+    <div class="v-card" ${repeatBadges ? 'style="border-color:rgba(239,68,68,0.4);"' : ''}>
+      <div class="v-card-header">
+        <div class="v-ref">${v.refNumber}${repeatBadges ? `<span style="margin-right:8px;">${repeatBadges}</span>` : ''}</div>
+        <div class="v-status ${statusClass}">${statusText}</div>
+      </div>
+      ${repeatWarn}
+      <div class="v-details">
+        <div class="v-detail"><strong>نوع المخالفة</strong>${v.mainViolationTypeLabel}</div>
+        <div class="v-detail"><strong>التفاصيل</strong>${v.subViolationType}</div>
+        <div class="v-detail"><strong>الشركة</strong>${v.companyName}</div>
+        <div class="v-detail"><strong>المنطقة</strong>${v.zone}</div>
+        <div class="v-detail"><strong>الشفت</strong>${v.shift} | ${v.violationTime}</div>
+        <div class="v-detail"><strong>نوع التصريح</strong>${v.permitType}</div>
+        <div class="v-detail"><strong>رقم الهوية</strong>${v.violatorId}</div>
+        <div class="v-detail"><strong>رقم الجوال</strong>${v.violatorPhone}</div>
+        ${v.vehiclePlate ? `<div class="v-detail"><strong>لوحة المركبة</strong>${v.vehiclePlate}</div>` : ''}
+        ${v.personCount  ? `<div class="v-detail"><strong>عدد الأشخاص</strong>${v.personCount}</div>` : ''}
+        ${v.receivingGroup ? `<div class="v-detail"><strong>المجموعة</strong>${v.receivingGroup}</div>` : ''}
+        <div class="v-detail"><strong>المفتش</strong>${v.inspector} (${v.inspectorId})</div>
+        <div class="v-detail"><strong>التاريخ والوقت</strong>${v.date} — ${v.time}</div>
+        ${mapsLink ? `<div class="v-detail" style="grid-column:1/-1;"><strong>الموقع</strong><a href="${mapsLink}" target="_blank" style="color:#34d399;">🗺️ عرض على الخريطة</a></div>` : ''}
+        ${v.reviewedBy ? `<div class="v-detail"><strong>المشرف</strong>${v.reviewedBy}</div><div class="v-detail"><strong>تاريخ المراجعة</strong>${v.reviewDate}</div>` : ''}
+        ${v.reviewNotes ? `<div class="v-detail" style="grid-column:1/-1;"><strong>ملاحظات المشرف</strong>${v.reviewNotes}</div>` : ''}
+      </div>
+      ${(v.images && v.images.length) ? `
+      <div style="padding:0 14px 10px;">
+        <div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:6px;">📸 صور المخالفة (${v.images.length})</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+          ${v.images.slice(0,6).map((src,i)=>`
+            <div style="position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--border);">
+              <img src="${src}" style="width:100%;height:120px;object-fit:cover;display:block;">
+              <div style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,0.6);color:var(--gold);font-size:9px;padding:1px 5px;border-radius:3px;">صورة ${i+1}</div>
+            </div>`).join('')}
+        </div>
+      </div>` : ''}
+      <div class="v-actions">
+        <button class="btn-sm btn-pdf" onclick="sharePDFByIndex('${v.refNumber}')">📄 PDF</button>
+        ${canReview ? `
+          <input type="text" class="v-notes-input" data-ref="${v.refNumber}" placeholder="ملاحظات (اختياري للموافقة، إجباري للرفض)..." style="flex:1;">
+          <button class="btn-sm btn-approve" onclick="approveViolation(this)" data-ref="${v.refNumber}">✅ موافقة</button>
+          <button class="btn-sm btn-reject"  onclick="rejectViolation(this)"  data-ref="${v.refNumber}">❌ رفض</button>
+        ` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// ADVANCED FILTER
+// ══════════════════════════════════════════════════════
+function applyFilters() {
+  const q      = (document.getElementById('searchInput')?.value || '').toLowerCase();
+  const status = document.getElementById('filterStatus')?.value || '';
+  const zone   = document.getElementById('filterZone')?.value || '';
+  const shift  = document.getElementById('filterShift')?.value || '';
+  const group  = document.getElementById('filterGroup')?.value || '';
+  const type   = document.getElementById('filterType')?.value || '';
+
+  let list = violations;
+  // الموظف يرى مخالفاته فقط
+  if (currentUser?.role === 'employee') {
+    list = list.filter(v => v.inspectorId === currentUser.id);
+  } else if (currentUser?.role === 'supervisor' && currentUser.group) {
+    list = list.filter(v => v.receivingGroup === currentUser.group);
+  }
+  if (q)      list = list.filter(v =>
+    v.refNumber.toLowerCase().includes(q) ||
+    v.violatorId.includes(q) ||
+    v.violatorPhone.includes(q) ||
+    (v.companyName||'').toLowerCase().includes(q) ||
+    (v.inspector||'').toLowerCase().includes(q) ||
+    (v.subViolationType||'').toLowerCase().includes(q));
+  if (status) list = list.filter(v => v.status === status);
+  if (zone)   list = list.filter(v => v.zone === zone);
+  if (shift)  list = list.filter(v => v.shift === shift);
+  if (group)  list = list.filter(v => v.receivingGroup === group);
+  if (type)   list = list.filter(v => v.mainViolationType === type);
+
+  const countEl = document.getElementById('filterCount');
+  if (countEl) countEl.textContent = `نتائج البحث: ${list.length} مخالفة`;
+  renderCards(list, 'violationsList', false);
+}
+
+function resetFilters() {
+  ['searchInput','filterStatus','filterZone','filterShift','filterGroup','filterType']
+    .forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  // Reset chip highlights
+  ['chipStatus','chipZone','chipShift','chipGroup','chipType'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.classList.remove('active');
+  });
+  applyFilters();
+}
+
+function updateChipActive(chipId, selectId) {
+  const chip = document.getElementById(chipId);
+  const sel = document.getElementById(selectId);
+  if (chip && sel) {
+    chip.classList.toggle('active', sel.value !== '');
+  }
+}
+
+// Keep old name for compatibility
+function searchViolations() { applyFilters(); }
+
+// ══════════════════════════════════════════════════════
+// WHATSAPP NOTIFICATIONS
+// ══════════════════════════════════════════════════════
+function saveWASettings() {
+  const waEnabled = document.getElementById('waEnabled')?.checked || false;
+  const emailEnabled = document.getElementById('emailEnabled')?.checked || false;
+  const notifWhatsApp = document.getElementById('notifWhatsApp')?.checked || false;
+  const notifEmail = document.getElementById('notifEmail')?.checked || false;
+  const template = document.getElementById('waTemplate')?.value || '';
+  const emailTemplate = document.getElementById('emailTemplate')?.value || '';
+  const nums = [];
+  document.querySelectorAll('.wa-number-input').forEach(el => {
+    if (el.value.trim()) nums.push(el.value.trim());
+  });
+  const emails = [];
+  document.querySelectorAll('.email-input').forEach(el => {
+    if (el.value.trim()) emails.push(el.value.trim());
+  });
+  localStorage.setItem('waSettings', JSON.stringify({
+    enabled: waEnabled, template, nums,
+    emailEnabled, emailTemplate, emails,
+    notifWhatsApp, notifEmail
+  }));
+  showToast('✅ تم حفظ إعدادات الإشعارات');
+}
+
+function loadWASettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('waSettings') || '{}');
+    if (document.getElementById('waEnabled')) document.getElementById('waEnabled').checked = saved.enabled || false;
+    if (document.getElementById('emailEnabled')) document.getElementById('emailEnabled').checked = saved.emailEnabled || false;
+    if (document.getElementById('notifWhatsApp')) document.getElementById('notifWhatsApp').checked = saved.notifWhatsApp !== false;
+    if (document.getElementById('notifEmail')) document.getElementById('notifEmail').checked = saved.notifEmail || false;
+    if (saved.template && document.getElementById('waTemplate')) document.getElementById('waTemplate').value = saved.template;
+    if (saved.emailTemplate && document.getElementById('emailTemplate')) document.getElementById('emailTemplate').value = saved.emailTemplate;
+    if (saved.nums && saved.nums.length) {
+      const container = document.getElementById('waNumbers');
+      if (container) {
+        container.innerHTML = '';
+        saved.nums.forEach((num, i) => {
+          container.innerHTML += `<div class="wa-number-row" style="margin-bottom:8px;">
+            <input class="form-input wa-number-input" type="tel" value="${num}" id="waNum${i}" onchange="saveWASettings()">
+            <button class="btn-sm btn-pdf" onclick="removeWANumber(${i})">🗑️</button>
+          </div>`;
+        });
+      }
+    }
+    if (saved.emails && saved.emails.length) {
+      const container = document.getElementById('emailAddresses');
+      if (container) {
+        container.innerHTML = '';
+        saved.emails.forEach((email, i) => {
+          container.innerHTML += `<div class="wa-number-row" style="margin-bottom:8px;">
+            <input class="form-input email-input" type="email" value="${email}" id="emailAddr${i}" onchange="saveWASettings()">
+            <button class="btn-sm btn-pdf" onclick="removeEmailAddress(${i})">🗑️</button>
+          </div>`;
+        });
+      }
+    }
+  } catch(e) {}
+}
+
+function addWANumber() {
+  const container = document.getElementById('waNumbers');
+  const count = container.querySelectorAll('.wa-number-row').length;
+  container.innerHTML += `<div class="wa-number-row" style="margin-bottom:8px;">
+    <input class="form-input wa-number-input" type="tel" placeholder="966xxxxxxxxx" id="waNum${count}" onchange="saveWASettings()">
+    <button class="btn-sm btn-pdf" onclick="removeWANumber(${count})">🗑️</button>
+  </div>`;
+}
+
+function removeWANumber(idx) {
+  const rows = document.querySelectorAll('#waNumbers .wa-number-row');
+  if (rows[idx]) rows[idx].remove();
+  saveWASettings();
+}
+
+function testWANotification() {
+  const fakeViolation = {
+    refNumber:'QID-TEST-001', mainViolationTypeLabel:'مخالفة مرورية',
+    subViolationType:'تجاوز السرعة', companyName:'شركة الاختبار',
+    zone:'Upper Zone', inspector: currentUser?.name || 'مفتش',
+    date: new Date().toLocaleDateString('ar-SA'), time: new Date().toLocaleTimeString('ar-SA')
+  };
+  sendWANotification(fakeViolation);
+}
+
+function sendWANotification(violation) {
+  try {
+    const settings = JSON.parse(localStorage.getItem('waSettings') || '{}');
+    // واتساب
+    if (settings.enabled && settings.nums?.length && settings.notifWhatsApp !== false) {
+      const template = settings.template ||
+`⚠️ مخالفة جديدة — نظام القدية
+الرقم: {refNumber}
+النوع: {type}
+الشركة: {company}
+المنطقة: {zone}
+المفتش: {inspector}
+الوقت: {time}`;
+      const msg = template
+        .replace('{refNumber}', violation.refNumber)
+        .replace('{type}', violation.mainViolationTypeLabel || violation.subViolationType)
+        .replace('{company}', violation.companyName)
+        .replace('{zone}', violation.zone)
+        .replace('{inspector}', violation.inspector)
+        .replace('{time}', violation.date + ' ' + violation.time);
+
+      const num = settings.nums[0].replace(/\D/g,'');
+      const url = `https://wa.me/${num}?text=${encodeURIComponent(msg)}`;
+      // فتح بطريقة آمنة بدون صفحة فارغة
+      const a = document.createElement('a');
+      a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      a.click();
+
+      if (settings.nums.length > 1) {
+        showToast(`💬 تم فتح واتساب للرقم الأول — أرقام أخرى: ${settings.nums.length - 1}`);
+      }
+    }
+    // إيميل
+    if (settings.emailEnabled && settings.emails?.length && settings.notifEmail) {
+      sendEmailNotification(violation);
+    }
+  } catch(e) { console.error('Notification error:', e); }
+}
+
+function sendEmailNotification(violation) {
+  try {
+    const settings = JSON.parse(localStorage.getItem('waSettings') || '{}');
+    if (!settings.emailEnabled || !settings.emails?.length) return;
+    const template = settings.emailTemplate ||
+`⚠️ مخالفة جديدة — نظام القدية
+الرقم المرجعي: {refNumber}
+نوع المخالفة: {type}
+الشركة: {company}
+المنطقة: {zone}
+المفتش: {inspector}
+التاريخ والوقت: {time}`;
+    const body = template
+      .replace('{refNumber}', violation.refNumber)
+      .replace('{type}', violation.mainViolationTypeLabel || violation.subViolationType)
+      .replace('{company}', violation.companyName)
+      .replace('{zone}', violation.zone)
+      .replace('{inspector}', violation.inspector)
+      .replace('{time}', violation.date + ' ' + violation.time);
+
+    const subject = `⚠️ مخالفة جديدة ${violation.refNumber} — نظام القدية`;
+    const allEmails = settings.emails.join(',');
+    const mailtoUrl = `mailto:${allEmails}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    // فتح بطريقة آمنة بدون صفحة فارغة
+    const a = document.createElement('a');
+    a.href = mailtoUrl; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    a.click();
+    showToast('📧 تم فتح البريد الإلكتروني للإرسال');
+  } catch(e) { console.error('Email error:', e); }
+}
+
+function addEmailAddress() {
+  const container = document.getElementById('emailAddresses');
+  const count = container.querySelectorAll('.wa-number-row').length;
+  container.innerHTML += `<div class="wa-number-row" style="margin-bottom:8px;">
+    <input class="form-input email-input" type="email" placeholder="email@example.com" id="emailAddr${count}" onchange="saveWASettings()">
+    <button class="btn-sm btn-pdf" onclick="removeEmailAddress(${count})">🗑️</button>
+  </div>`;
+}
+
+function removeEmailAddress(idx) {
+  const rows = document.querySelectorAll('#emailAddresses .wa-number-row');
+  if (rows[idx]) rows[idx].remove();
+  saveWASettings();
+}
+
+function testEmailNotification() {
+  const fakeViolation = {
+    refNumber:'QID-TEST-001', mainViolationTypeLabel:'مخالفة مرورية',
+    subViolationType:'تجاوز السرعة', companyName:'شركة الاختبار',
+    zone:'Upper Zone', inspector: currentUser?.name || 'مفتش',
+    date: new Date().toLocaleDateString('ar-SA'), time: new Date().toLocaleTimeString('ar-SA')
+  };
+  sendEmailNotification(fakeViolation);
+}
+
+// ══════════════════════════════════════════════════════
+// REPORTS
+// ══════════════════════════════════════════════════════
+let currentReportPeriod = 'today';
+
+function setReportPeriod(period) {
+  currentReportPeriod = period;
+  ['today','week','month','all'].forEach(p => {
+    const btn = document.getElementById('period'+p.charAt(0).toUpperCase()+p.slice(1));
+    if (btn) btn.classList.toggle('active', p === period);
+  });
+  renderReports(period);
+}
+
+function getReportData(period) {
+  const now = new Date();
+  let list = [...violations];
+  if (currentUser?.role === 'supervisor' && currentUser.group) {
+    list = list.filter(v => v.receivingGroup === currentUser.group);
+  }
+  if (period === 'today') {
+    const today = now.toLocaleDateString('ar-SA');
+    list = list.filter(v => v.date === today);
+  } else if (period === 'week') {
+    const weekAgo = new Date(now - 7*24*60*60*1000);
+    list = list.filter(v => {
+      try { return new Date(v.date.split('/').reverse().join('-')) >= weekAgo; } catch(e) { return true; }
+    });
+  } else if (period === 'month') {
+    const monthAgo = new Date(now - 30*24*60*60*1000);
+    list = list.filter(v => {
+      try { return new Date(v.date.split('/').reverse().join('-')) >= monthAgo; } catch(e) { return true; }
+    });
+  }
+  return list;
+}
+
+function renderReports(period) {
+  const data = getReportData(period);
+  const approved = data.filter(v=>v.status==='approved').length;
+  const rejected = data.filter(v=>v.status==='rejected').length;
+  const pending  = data.filter(v=>v.status==='pending').length;
+
+  const periodLabel = {today:'اليوم', week:'هذا الأسبوع', month:'هذا الشهر', all:'الإجمالي'}[period];
+
+  // KPIs
+  document.getElementById('reportKPIs').innerHTML = `
+    <div class="report-stat"><div class="report-stat-num" style="color:var(--gold-light);">${data.length}</div><div class="report-stat-label">إجمالي المخالفات — ${periodLabel}</div></div>
+    <div class="report-stat"><div class="report-stat-num" style="color:#34d399;">${approved}</div><div class="report-stat-label">موافق عليها</div></div>
+    <div class="report-stat"><div class="report-stat-num" style="color:#f87171;">${rejected}</div><div class="report-stat-label">مرفوضة</div></div>
+    <div class="report-stat"><div class="report-stat-num" style="color:#fbbf24;">${pending}</div><div class="report-stat-label">قيد المراجعة</div></div>
+  `;
+
+  // Helper: count by field
+  function countBy(field) {
+    const map = {};
+    data.forEach(v => { const k = v[field]||'غير محدد'; map[k]=(map[k]||0)+1; });
+    return Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  }
+
+  function buildTable(entries, label) {
+    if (!entries.length) return '<div style="color:var(--muted);padding:20px;text-align:center;">لا توجد بيانات</div>';
+    const max = entries[0][1];
+    return `<table class="report-table">
+      <thead><tr><th>${label}</th><th style="text-align:center;">العدد</th><th style="text-align:center;">النسبة</th></tr></thead>
+      <tbody>${entries.map(([k,v])=>`
+        <tr>
+          <td>${k}</td>
+          <td style="text-align:center;font-weight:700;color:var(--gold);">${v}</td>
+          <td style="text-align:center;">
+            <div style="display:flex;align-items:center;gap:8px;justify-content:center;">
+              <div style="width:60px;height:6px;background:rgba(255,255,255,0.1);border-radius:3px;">
+                <div style="width:${Math.round(v/max*100)}%;height:100%;background:var(--gold);border-radius:3px;"></div>
+              </div>
+              <span style="font-size:11px;color:var(--muted);">${data.length?Math.round(v/data.length*100):0}%</span>
+            </div>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+  }
+
+  document.getElementById('reportInspectors').innerHTML = buildTable(countBy('inspector'), 'المفتش');
+  document.getElementById('reportCompanies').innerHTML  = buildTable(countBy('companyName'), 'الشركة');
+  document.getElementById('reportZones').innerHTML      = buildTable(countBy('zone'), 'المنطقة');
+  document.getElementById('reportTypes').innerHTML      = buildTable(countBy('mainViolationTypeLabel'), 'نوع المخالفة');
+}
+
+async function downloadReport() {
+  const period = currentReportPeriod;
+  const data = getReportData(period);
+  const periodLabel = {today:'اليوم', week:'هذا الأسبوع', month:'هذا الشهر', all:'الإجمالي'}[period];
+
+  function countBy(field) {
+    const map = {};
+    data.forEach(v => { const k = v[field]||'غير محدد'; map[k]=(map[k]||0)+1; });
+    return Object.entries(map).sort((a,b)=>b[1]-a[1]);
+  }
+
+  const el = document.createElement('div');
+  el.style.cssText='position:fixed;left:-9999px;top:0;width:794px;padding:40px;background:#060d1a;font-family:Arial,sans-serif;color:#e2e8f0;direction:rtl;';
+  el.innerHTML=`
+    <div style="border:2px solid #d4af37;border-radius:16px;padding:30px;">
+      <div style="text-align:center;margin-bottom:24px;">
+        <div style="font-size:36px;">📈</div>
+        <div style="font-size:24px;font-weight:900;color:#ffd700;">التقرير الدوري — ${periodLabel}</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px;">${new Date().toLocaleDateString('ar-SA')} — نظام مخالفات القدية</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:24px;">
+        ${[
+          ['الإجمالي', data.length, '#ffd700'],
+          ['موافق عليها', data.filter(v=>v.status==='approved').length, '#34d399'],
+          ['مرفوضة', data.filter(v=>v.status==='rejected').length, '#f87171'],
+          ['قيد المراجعة', data.filter(v=>v.status==='pending').length, '#fbbf24'],
+        ].map(([l,n,c])=>`<div style="background:rgba(255,255,255,0.05);border:1px solid rgba(212,175,55,0.2);border-radius:10px;padding:16px;text-align:center;">
+          <div style="font-size:28px;font-weight:900;color:${c};">${n}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px;">${l}</div>
+        </div>`).join('')}
+      </div>
+      ${[
+        ['👮 أنشط المفتشين', countBy('inspector')],
+        ['🏢 أكثر الشركات', countBy('companyName')],
+        ['📍 توزيع المناطق', countBy('zone')],
+        ['⚠️ أنواع المخالفات', countBy('mainViolationTypeLabel')],
+      ].map(([title, rows])=>`
+        <div style="margin-bottom:16px;">
+          <div style="font-size:14px;font-weight:700;color:#d4af37;margin-bottom:8px;">${title}</div>
+          <table style="width:100%;border-collapse:collapse;font-size:12px;">
+            <thead><tr style="background:rgba(212,175,55,0.1);">
+              <th style="padding:8px;border:1px solid rgba(212,175,55,0.2);color:#d4af37;text-align:right;">الاسم</th>
+              <th style="padding:8px;border:1px solid rgba(212,175,55,0.2);color:#d4af37;text-align:center;">العدد</th>
+            </tr></thead>
+            <tbody>${rows.slice(0,8).map(([k,v])=>`
+              <tr><td style="padding:8px;border:1px solid rgba(255,255,255,0.05);">${k}</td>
+              <td style="padding:8px;border:1px solid rgba(255,255,255,0.05);text-align:center;font-weight:700;color:#ffd700;">${v}</td></tr>
+            `).join('')}</tbody>
+          </table>
+        </div>`).join('')}
+    </div>`;
+
+  document.body.appendChild(el);
+  try {
+    const canvas = await html2canvas(el,{scale:2,useCORS:true,backgroundColor:'#060d1a',logging:false});
+    const {jsPDF} = window.jspdf;
+    const imgData = canvas.toDataURL('image/png');
+    const iw=210, ih=(canvas.height*iw)/canvas.width;
+    const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    if(ih<=297){doc.addImage(imgData,'PNG',0,0,iw,ih);}
+    else{let y=0,rem=ih;while(rem>0){doc.addImage(imgData,'PNG',0,-y,iw,ih);rem-=297;y+=297;if(rem>0)doc.addPage();}}
+    doc.save(`تقرير_${periodLabel}_${new Date().toISOString().split('T')[0]}.pdf`);
+    showToast('✅ تم تحميل التقرير بنجاح!');
+  } catch(err) {
+    showToast('❌ خطأ في إنشاء التقرير','error');
+  } finally {
+    document.body.removeChild(el);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// APPROVE / REJECT
+// ══════════════════════════════════════════════════════
+function approveViolation(btn) {
+  try {
+    if (!currentUser || (currentUser.role !== 'supervisor' && currentUser.role !== 'admin')) {
+      showToast('❌ فقط المشرفين يمكنهم الموافقة','error'); return;
+    }
+    const ref = btn.getAttribute('data-ref');
+    const idx = violations.findIndex(x => x.refNumber === ref);
+    if (idx === -1) { showToast('❌ لم يتم العثور على المخالفة','error'); return; }
+    const notesEl = btn.closest('.v-card').querySelector('.v-notes-input');
+    const notes = notesEl ? notesEl.value.trim() : '';
+    violations[idx].status = 'approved';
+    violations[idx].reviewedBy = currentUser.name;
+    violations[idx].reviewerId = currentUser.id;
+    violations[idx].reviewDate = new Date().toLocaleDateString('ar-SA');
+    violations[idx].reviewTime = new Date().toLocaleTimeString('ar-SA');
+    violations[idx].reviewNotes = notes || null;
+    saveToStorage();
+    sendToGoogleSheets(violations[idx]);
+    showToast('✅ تمت الموافقة وإرسال المخالفة إلى Google Sheets');
+    renderViolationList('pending','pendingList',true);
+    renderViolationList('approved','approvedList',false);
+    if (typeof renderDashboard === 'function') renderDashboard();
+  } catch(e) { console.error(e); showToast('❌ خطأ: '+e.message,'error'); }
+}
+
+function rejectViolation(btn) {
+  try {
+    if (!currentUser || (currentUser.role !== 'supervisor' && currentUser.role !== 'admin')) {
+      showToast('❌ فقط المشرفين يمكنهم الرفض','error'); return;
+    }
+    const ref = btn.getAttribute('data-ref');
+    const idx = violations.findIndex(x => x.refNumber === ref);
+    if (idx === -1) { showToast('❌ لم يتم العثور على المخالفة','error'); return; }
+    const notesEl = btn.closest('.v-card').querySelector('.v-notes-input');
+    const notes = notesEl ? notesEl.value.trim() : '';
+    if (!notes) { showToast('⚠️ الرجاء إضافة ملاحظة توضح سبب الرفض','error'); return; }
+    violations[idx].status = 'rejected';
+    violations[idx].reviewedBy = currentUser.name;
+    violations[idx].reviewerId = currentUser.id;
+    violations[idx].reviewDate = new Date().toLocaleDateString('ar-SA');
+    violations[idx].reviewTime = new Date().toLocaleTimeString('ar-SA');
+    violations[idx].reviewNotes = notes;
+    saveToStorage();
+    sendToGoogleSheets(violations[idx]);
+    showToast('❌ تم رفض المخالفة وإرسالها إلى Google Sheets');
+    renderViolationList('pending','pendingList',true);
+    renderViolationList('rejected','rejectedList',false);
+    if (typeof renderDashboard === 'function') renderDashboard();
+  } catch(e) { console.error(e); showToast('❌ خطأ: '+e.message,'error'); }
+}
+
+// ══════════════════════════════════════════════════════
+// SUBMIT
+// ══════════════════════════════════════════════════════
+function submitViolation() {
+  const mainViolationType = document.getElementById('mainViolationType').value;
+  let subViolationType    = document.getElementById('subViolationType').value;
+  const otherDetail  = document.getElementById('otherViolationDetail').value;
+  const personCount  = document.getElementById('personCount').value;
+  const permitType   = document.getElementById('permitType').value;
+  const zone         = document.getElementById('zone').value;
+  const receivingGroup = document.getElementById('receivingGroup').value;
+  const shift        = document.getElementById('shift').value;
+  const companyName  = document.getElementById('companyName').value;
+  const violatorId   = document.getElementById('violatorId').value.trim();
+  const violatorPhone= document.getElementById('violatorPhone').value.trim();
+  const plateLetters = document.getElementById('plateLetters').value.trim();
+  const plateNumbers = document.getElementById('plateNumbers').value.trim();
+
+  if (!mainViolationType||!subViolationType||!permitType||!zone||!receivingGroup||!shift||!companyName||!violatorId||!violatorPhone) {
+    showToast('⚠️ الرجاء ملء جميع الحقول المطلوبة (*)','error'); return;
+  }
+  if (!plateLetters||!plateNumbers) {
+    showToast('⚠️ الرجاء إدخال حروف وأرقام لوحة المركبة','error'); return;
+  }
+  if (!/^[A-Z]{1,4}$/.test(plateLetters)) {
+    showToast('⚠️ حروف اللوحة يجب أن تكون إنجليزية فقط','error'); return;
+  }
+  if (subViolationType==='أخرى..'&&!otherDetail.trim()) {
+    showToast('⚠️ الرجاء كتابة تفاصيل المخالفة الأخرى','error'); return;
+  }
+  if (mainViolationType==='تصاريح'&&subViolationType!=='عدم وجود استكر'&&(!personCount||personCount<1)) {
+    showToast('⚠️ الرجاء إدخال عدد الأشخاص','error'); return;
+  }
+  if (!/^[12]\d{9}$/.test(violatorId)) {
+    showToast('⚠️ رقم الهوية يجب أن يبدأ بـ 1 أو 2 ويتكون من 10 أرقام','error'); return;
+  }
+  if (!/^05\d{8}$/.test(violatorPhone)) {
+    showToast('⚠️ رقم الجوال يجب أن يبدأ بـ 05 ويتكون من 10 أرقام','error'); return;
+  }
+  if (!currentLocation) {
+    showToast('⚠️ الرجاء تحديد الموقع الجغرافي — اضغط "موقعي الحالي" أو حدد على الخريطة','error');
+    document.getElementById('coordinatesDisplay')?.scrollIntoView({behavior:'smooth', block:'center'});
+    return;
+  }
+  if (!uploadedImages.length) {
+    const a = document.getElementById('imgRequiredAlert');
+    if (a) a.style.display = 'block';
+    showToast('⚠️ يجب رفع صورة واحدة على الأقل للمخالفة','error');
+    document.getElementById('uploadBtn')?.scrollIntoView({behavior:'smooth', block:'center'});
+    return;
+  }
+
+  // متابعة الإصدار مباشرة (الفحص تم في الخطوة 1)
+  proceedSubmitViolation();
+}
+
+// ══════════════════════════════════════════════════════
+// SECURITY SCAN — الفحص الأمني (الخطوة 1 من النموذج)
+// ══════════════════════════════════════════════════════
+let securityScanResult = null;
+
+function updateScanPlatePreview() {
+  const l = document.getElementById('scanPlateLetters').value.trim();
+  const n = document.getElementById('scanPlateNumbers').value.trim();
+  const prev = document.getElementById('scanPlatePreview');
+  if (l || n) { prev.style.display = 'block'; prev.textContent = (l&&n) ? l+' — '+n : (l||n); }
+  else { prev.style.display = 'none'; }
+}
+
+function runSecurityScan() {
+  // ── التحقق من إدخال الحقلين ──
+  const pL = document.getElementById('scanPlateLetters').value.trim().toUpperCase();
+  const pN = document.getElementById('scanPlateNumbers').value.trim();
+  const idNum = document.getElementById('scanIdNumber').value.trim();
+
+  if (!pL || !pN) { showToast('⚠️ أدخل حروف وأرقام لوحة المركبة','error'); return; }
+  if (!idNum) { showToast('⚠️ أدخل رقم الهوية أو الإقامة','error'); return; }
+
+  const fullPlate = pL + '-' + pN;
+
+  // ── قواعد البيانات ──
+  const blockedPlates = JSON.parse(localStorage.getItem('blockedPlates') || '[]');
+  const blockedIds    = JSON.parse(localStorage.getItem('blockedIds') || '[]');
+  const wantedPlates  = JSON.parse(localStorage.getItem('wantedPlates') || '[]');
+  const wantedIds     = JSON.parse(localStorage.getItem('wantedIds') || '[]');
+
+  const plateUp = fullPlate.toUpperCase();
+  const plateBlocked = blockedPlates.some(p => p.trim().toUpperCase() === plateUp);
+  const plateWanted  = wantedPlates.some(p => p.trim().toUpperCase() === plateUp);
+  const idBlocked    = blockedIds.some(id => id.trim() === idNum);
+  const idWanted     = wantedIds.some(id => id.trim() === idNum);
+
+  // ── عرض الفحص التدريجي ──
+  const resultBox = document.getElementById('scanResultBox');
+  resultBox.style.display = 'block';
+  resultBox.innerHTML = `
+    <div style="padding:16px;border-radius:12px;background:rgba(212,175,55,0.08);border:1px solid var(--border);margin-top:16px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <span style="font-size:22px;" id="scanSpinner">⏳</span>
+        <span style="font-size:14px;font-weight:700;color:var(--gold-light);">جاري الفحص الأمني...</span>
+      </div>
+      <div class="scan-progress"><div class="scan-progress-bar" id="scanProg2" style="width:0%"></div></div>
+      <div id="scanSteps2">
+        <div class="scan-item">
+          <span class="scan-icon">🚗</span>
+          <span>لوحة المركبة: <strong style="color:var(--gold);letter-spacing:2px;">${fullPlate}</strong></span>
+          <span class="scan-status pending" id="ssPlate">⏳</span>
+        </div>
+        <div class="scan-item">
+          <span class="scan-icon">🪪</span>
+          <span>رقم الهوية/الإقامة: <strong style="color:var(--gold);">${idNum}</strong></span>
+          <span class="scan-status pending" id="ssId">⏳</span>
+        </div>
+      </div>
+      <div id="scanFinalResult2" style="display:none;margin-top:12px;"></div>
+    </div>`;
+
+  const prog = document.getElementById('scanProg2');
+  document.getElementById('btnRunScan').disabled = true;
+
+  // ── Step 1: فحص اللوحة ──
+  setTimeout(() => {
+    prog.style.width = '50%';
+    const st = document.getElementById('ssPlate');
+    if (plateBlocked) { st.textContent = '🚫 ممنوعة — منع دخول'; st.className = 'scan-status alert'; }
+    else if (plateWanted) { st.textContent = '⚠️ عليها تعميم'; st.className = 'scan-status alert'; }
+    else { st.textContent = '✅ نظيف'; st.className = 'scan-status ok'; }
+  }, 700);
+
+  // ── Step 2: فحص الهوية ──
+  setTimeout(() => {
+    prog.style.width = '100%';
+    const st = document.getElementById('ssId');
+    if (idBlocked) { st.textContent = '🚫 ممنوع — منع دخول'; st.className = 'scan-status alert'; }
+    else if (idWanted) { st.textContent = '⚠️ عليه تعميم'; st.className = 'scan-status alert'; }
+    else { st.textContent = '✅ نظيف'; st.className = 'scan-status ok'; }
+  }, 1300);
+
+  // ── النتيجة النهائية ──
+  setTimeout(() => {
+    document.getElementById('btnRunScan').disabled = false;
+    const spinner = document.getElementById('scanSpinner');
+    const finalResult = document.getElementById('scanFinalResult2');
+    finalResult.style.display = 'block';
+
+    const hasAnyBlock  = plateBlocked || idBlocked;
+    const hasAnyWanted = plateWanted || idWanted;
+    const alerts = [];
+
+    if (plateBlocked) alerts.push('🚗 لوحة المركبة <b>' + fullPlate + '</b> — ممنوعة من الدخول');
+    if (plateWanted)  alerts.push('🚗 لوحة المركبة <b>' + fullPlate + '</b> — عليها تعميم نشط');
+    if (idBlocked)    alerts.push('🪪 رقم الهوية/الإقامة <b>' + idNum + '</b> — ممنوع من الدخول');
+    if (idWanted)     alerts.push('🪪 رقم الهوية/الإقامة <b>' + idNum + '</b> — عليه تعميم نشط');
+
+    const safePlate = fullPlate.replace(/'/g, "\\'");
+    const safeId = idNum.replace(/'/g, "\\'");
+
+    if (hasAnyBlock || hasAnyWanted) {
+      spinner.textContent = hasAnyBlock ? '🚫' : '⚠️';
+      securityScanResult = hasAnyBlock ? 'blocked' : 'wanted';
+      finalResult.innerHTML = `
+        <div class="scan-result ${hasAnyBlock ? 'blocked' : 'warning'}">
+          <div style="font-size:16px;font-weight:900;margin-bottom:8px;">${hasAnyBlock ? '🚫 تم رصد منع دخول!' : '⚠️ تم رصد تعميم!'}</div>
+          ${alerts.map(a => '<div style="font-size:12px;margin-bottom:4px;">'+a+'</div>').join('')}
+          <div style="font-size:11px;margin-top:10px;opacity:0.7;">
+            ${hasAnyBlock ? '⚠️ يُرجى إبلاغ الجهة الأمنية المختصة فوراً — يمكن متابعة إصدار المخالفة مع إشارة المنع'
+                          : 'يمكن متابعة إصدار المخالفة — يُنصح بإبلاغ المشرف'}
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:12px;">
+          <button class="btn-primary" onclick="unlockFullFormAfterScan('${securityScanResult}','${safePlate}','${safeId}')" style="flex:1;${hasAnyBlock ? 'background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.4);color:#f87171;box-shadow:none;' : ''}">
+            ${hasAnyBlock ? '⚠️ متابعة مع إشارة المنع' : '✅ متابعة وإكمال المخالفة'}
+          </button>
+          <button class="btn-primary" onclick="resetSecurityScan()" style="flex:1;background:rgba(255,255,255,0.08);color:var(--muted);border:1px solid var(--border);box-shadow:none;font-size:13px;">
+            🔄 فحص جديد
+          </button>
+        </div>`;
+    } else {
+      spinner.textContent = '✅';
+      securityScanResult = 'clear';
+      finalResult.innerHTML = `
+        <div class="scan-result clear">
+          <div style="font-size:16px;font-weight:900;margin-bottom:6px;">✅ الفحص سليم</div>
+          <div style="font-size:12px;opacity:0.8;">🚗 اللوحة: ${fullPlate} — نظيف &nbsp;&nbsp;|&nbsp;&nbsp; 🪪 الهوية: ${idNum} — نظيف</div>
+          <div style="font-size:11px;margin-top:6px;opacity:0.7;">لا يوجد منع دخول أو تعميم — يمكن متابعة إصدار المخالفة</div>
+        </div>
+        <button class="btn-primary" onclick="unlockFullFormAfterScan('clear','${safePlate}','${safeId}')" style="margin-top:12px;">
+          ✅ متابعة لإكمال النموذج
+        </button>`;
+    }
+  }, 1900);
+}
+
+function unlockFullFormAfterScan(status, plate, idNum) {
+  const form = document.getElementById('fullViolationForm');
+  form.style.display = 'block';
+  form.scrollIntoView({ behavior:'smooth', block:'start' });
+
+  // شارة الحالة
+  const badge = document.getElementById('securityBadge');
+  if (status === 'blocked') {
+    badge.innerHTML = '🚫 رُصد منع دخول';
+    badge.style.background = 'rgba(239,68,68,0.15)';
+    badge.style.borderColor = 'rgba(239,68,68,0.4)';
+    badge.style.color = '#f87171';
+  } else if (status === 'wanted') {
+    badge.innerHTML = '⚠️ رُصد تعميم';
+    badge.style.background = 'rgba(245,158,11,0.15)';
+    badge.style.borderColor = 'rgba(245,158,11,0.4)';
+    badge.style.color = '#fbbf24';
+  } else {
+    badge.innerHTML = '✅ الفحص سليم — نظيف';
+    badge.style.background = 'rgba(16,185,129,0.15)';
+    badge.style.borderColor = 'rgba(16,185,129,0.3)';
+    badge.style.color = '#34d399';
+  }
+
+  // نقل البيانات تلقائياً لحقول النموذج
+  const parts = plate.split('-');
+  if (parts.length === 2) {
+    document.getElementById('plateLetters').value = parts[0];
+    document.getElementById('plateNumbers').value = parts[1];
+    updatePlate();
+  }
+  document.getElementById('violatorId').value = idNum;
+  checkRepeatOnForm();
+}
+
+function resetSecurityScan() {
+  document.getElementById('scanResultBox').style.display = 'none';
+  document.getElementById('scanPlateLetters').value = '';
+  document.getElementById('scanPlateNumbers').value = '';
+  document.getElementById('scanIdNumber').value = '';
+  document.getElementById('scanPlatePreview').style.display = 'none';
+  document.getElementById('fullViolationForm').style.display = 'none';
+  document.getElementById('btnRunScan').disabled = false;
+  securityScanResult = null;
+}
+
+function proceedSubmitViolation() {
+  const mainViolationType = document.getElementById('mainViolationType').value;
+  let subViolationType    = document.getElementById('subViolationType').value;
+  const otherDetail  = document.getElementById('otherViolationDetail').value;
+  const personCount  = document.getElementById('personCount').value;
+  const permitType   = document.getElementById('permitType').value;
+  const zone         = document.getElementById('zone').value;
+  const receivingGroup = document.getElementById('receivingGroup').value;
+  const shift        = document.getElementById('shift').value;
+  const companyName  = document.getElementById('companyName').value;
+  const violatorId   = document.getElementById('violatorId').value.trim();
+  const violatorPhone= document.getElementById('violatorPhone').value.trim();
+  const plateLetters = document.getElementById('plateLetters').value.trim();
+  const plateNumbers = document.getElementById('plateNumbers').value.trim();
+
+  const imgAlert = document.getElementById('imgRequiredAlert');
+  if (imgAlert) imgAlert.style.display = 'none';
+
+  const finalSubType = subViolationType==='أخرى..' ? otherDetail : subViolationType;
+  const refNumber = 'QID-'+new Date().getFullYear()+'-'+Date.now().toString().slice(-6);
+  const labels = { 'مرورية':'مخالفة مرورية','جنائية':'مخالفة جنائية','عدم_التزام':'عدم التزام بأنظمة القدية','تصاريح':'مخالفة التصاريح' };
+
+  const violation = {
+    refNumber, mainViolationType, mainViolationTypeLabel:labels[mainViolationType]||mainViolationType,
+    subViolationType:finalSubType, personCount:personCount||null,
+    permitType, zone, receivingGroup, shift,
+    violationTime: new Date().toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'}),
+    companyName, violatorId, violatorPhone,
+    vehiclePlate: plateLetters+'-'+plateNumbers,
+    location:currentLocation,
+    inspector:currentUser.name, inspectorId:currentUser.id,
+    date:new Date().toLocaleDateString('ar-SA'),
+    time:new Date().toLocaleTimeString('ar-SA'),
+    images:[...uploadedImages],
+    status:'pending', reviewedBy:null, reviewerId:null,
+    reviewDate:null, reviewTime:null, reviewNotes:null
+  };
+
+  violations.push(violation);
+  saveToStorage();
+  lastViolation = violation;
+
+  // إشعار واتساب
+  sendWANotification(violation);
+
+  // إرسال مباشر إلى Google Sheets عند التسجيل
+  sendToGoogleSheets(violation);
+
+  document.getElementById('refNumber').textContent = refNumber;
+  document.getElementById('successMsg').style.display = 'block';
+  showToast('✅ تم تسجيل المخالفة بنجاح!');
+
+  // Reset form
+  document.getElementById('mainViolationType').value='';
+  updateSubViolations();
+  ['permitType','zone','receivingGroup','shift'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('companyName').value='';
+  document.getElementById('companyDisplayText').textContent='— اختر الشركة —';
+  document.getElementById('companyDisplayText').style.color='var(--muted)';
+  document.getElementById('violatorId').value='';
+  document.getElementById('violatorPhone').value='';
+  document.getElementById('plateLetters').value='';
+  document.getElementById('plateNumbers').value='';
+  document.getElementById('vehiclePlate').value='';
+  document.getElementById('platePreview').style.display='none';
+  document.getElementById('map').style.display='none';
+  document.getElementById('imagePreview').innerHTML='';
+  document.getElementById('violationImages').value='';
+  const imgAlert2 = document.getElementById('imgRequiredAlert');
+  if (imgAlert2) imgAlert2.style.display = 'none';
+  document.getElementById('coordinatesDisplay').style.display='none';
+  currentLocation=null; uploadedImages=[];
+  if(marker&&map){map.removeLayer(marker);marker=null;}
+  // إعادة تعيين خطوة الفحص الأمني
+  resetSecurityScan();
+  document.getElementById('securityCheckCard').scrollIntoView({behavior:'smooth', block:'start'});
+  setTimeout(()=>{ document.getElementById('successMsg').style.display='none'; },5000);
+  window.scrollTo(0,0);
+}
+
+// ══════════════════════════════════════════════════════
+// FORM HELPERS
+// ══════════════════════════════════════════════════════
+function updateSubViolations() {
+  const main = document.getElementById('mainViolationType').value;
+  const sub  = document.getElementById('subViolationType');
+  sub.innerHTML = '<option value="">— اختر المخالفة —</option>';
+  document.getElementById('otherViolationField').style.display='none';
+  document.getElementById('personCountField').style.display='none';
+  if (main && violationCategories[main]) {
+    sub.disabled = false;
+    violationCategories[main].forEach(v => {
+      const o=document.createElement('option'); o.value=v; o.textContent=v; sub.appendChild(o);
+    });
+  } else { sub.disabled=true; }
+}
+
+function toggleOtherField() {
+  const main=document.getElementById('mainViolationType').value;
+  const sub =document.getElementById('subViolationType').value;
+  document.getElementById('otherViolationField').style.display = sub==='أخرى..' ? 'block':'none';
+  if (sub!=='أخرى..') document.getElementById('otherViolationDetail').value='';
+  document.getElementById('personCountField').style.display =
+    (main==='تصاريح'&&sub&&sub!=='عدم وجود استكر') ? 'block':'none';
+  if(!(main==='تصاريح'&&sub&&sub!=='عدم وجود استكر')) document.getElementById('personCount').value='';
+}
+
+// ══════════════════════════════════════════════════════
+// COMPANY DROPDOWN
+// ══════════════════════════════════════════════════════
+function renderCompanyList(filter) {
+  const filtered = filter
+    ? companyList.filter(c=>c.toLowerCase().includes(filter.toLowerCase()))
+    : companyList;
+  const current = document.getElementById('companyName').value;
+  const div = document.getElementById('companyList');
+  div.innerHTML = filtered.length
+    ? filtered.map(c=>`<div class="company-option${c===current?' selected':''}" onclick="selectCompany('${c.replace(/'/g,"\'")}')"> ${c}</div>`).join('')
+    : '<div style="color:var(--muted);text-align:center;padding:12px;">لا توجد نتائج</div>';
+}
+function toggleCompanyDropdown() {
+  companyDropdownOpen=!companyDropdownOpen;
+  const dd=document.getElementById('companyDropdown');
+  const tr=document.getElementById('companyTrigger');
+  dd.style.display=companyDropdownOpen?'block':'none';
+  tr.classList.toggle('open',companyDropdownOpen);
+  if(companyDropdownOpen){
+    document.getElementById('companySearch').value='';
+    renderCompanyList('');
+    setTimeout(()=>document.getElementById('companySearch').focus(),80);
+  }
+}
+function filterCompanies(){renderCompanyList(document.getElementById('companySearch').value);}
+function selectCompany(name){
+  document.getElementById('companyName').value=name;
+  document.getElementById('companyDisplayText').textContent=name;
+  document.getElementById('companyDisplayText').style.color='var(--text)';
+  document.getElementById('companyDropdown').style.display='none';
+  document.getElementById('companyTrigger').classList.remove('open');
+  companyDropdownOpen=false;
+  checkRepeatOnForm();
+}
+document.addEventListener('click',e=>{
+  const w=document.getElementById('companyTrigger');
+  const dd=document.getElementById('companyDropdown');
+  if(w&&dd&&!w.contains(e.target)&&!dd.contains(e.target)){
+    dd.style.display='none';
+    w.classList.remove('open');
+    companyDropdownOpen=false;
+  }
+});
+
+// ══════════════════════════════════════════════════════
+// PLATE
+// ══════════════════════════════════════════════════════
+function updatePlate(){
+  const l=document.getElementById('plateLetters').value.trim();
+  const n=document.getElementById('plateNumbers').value.trim();
+  document.getElementById('vehiclePlate').value=(l&&n)?l+'-'+n:'';
+  const prev=document.getElementById('platePreview');
+  if(l||n){prev.style.display='block';prev.textContent=(l&&n)?l+' — '+n:(l||n);}
+  else{prev.style.display='none';}
+}
+
+// ══════════════════════════════════════════════════════
+// MAP
+// ══════════════════════════════════════════════════════
+function initMap(){
+  if(!map){
+    map=L.map('map').setView([24.532297,46.439718],13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
+    map.on('click',e=>setLocation(e.latlng.lat,e.latlng.lng));
+  }
+}
+function showMap(){
+  const m=document.getElementById('map');
+  if(m.style.display==='none'){m.style.display='block';initMap();setTimeout(()=>map.invalidateSize(),100);}
+  else{m.style.display='none';}
+}
+function setLocation(lat,lng){
+  currentLocation={lat,lng};
+  if(marker)map.removeLayer(marker);
+  marker=L.marker([lat,lng]).addTo(map);
+  map.setView([lat,lng],15);
+  const cd=document.getElementById('coordinatesDisplay');
+  cd.style.display='block';
+  cd.innerHTML=`<span style="color:#34d399;font-weight:700;">✅ تم تحديد الموقع</span><br>
+    <a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank">🗺️ عرض على خرائط Google</a>`;
+}
+function getCurrentLocation(){
+  if(!navigator.geolocation){showToast('المتصفح لا يدعم الموقع','error');return;}
+  const cd=document.getElementById('coordinatesDisplay');
+  cd.style.display='block'; cd.innerHTML='<span style="color:var(--gold);">⏳ جاري تحديد موقعك...</span>';
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      const{latitude:lat,longitude:lng}=pos.coords;
+      const m=document.getElementById('map');
+      if(m.style.display==='none'){m.style.display='block';initMap();setTimeout(()=>{map.invalidateSize();setLocation(lat,lng);},300);}
+      else setLocation(lat,lng);
+    },
+    err=>{
+      const msgs={1:'يرجى السماح للمتصفح بالوصول للموقع',2:'تعذّر تحديد الموقع، فعّل GPS',3:'انتهت مهلة التحديد، حاول مجدداً'};
+      const msg='⚠️ '+(msgs[err.code]||'فشل تحديد الموقع');
+      cd.innerHTML=`<span style="color:#f87171;">${msg}</span>`;
+      showToast(msg,'error');
+    },
+    {enableHighAccuracy:true,timeout:15000,maximumAge:0}
+  );
+}
+
+// ══════════════════════════════════════════════════════
+// IMAGE UPLOAD
+// ══════════════════════════════════════════════════════
+async function compressImage(file){
+  return new Promise(res=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const c=document.createElement('canvas');
+        let w=img.width,h=img.height;
+        const MAX=800;
+        if(w>h){if(w>MAX){h*=MAX/w;w=MAX;}}else{if(h>MAX){w*=MAX/h;h=MAX;}}
+        c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
+        res(c.toDataURL('image/jpeg',0.6));
+      };
+      img.src=e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+async function handleImageUpload(e){
+  if (uploadedImages.length >= 6) {
+    showToast('⚠️ الحد الأقصى 6 صور','error');
+    return;
+  }
+  const grid=document.getElementById('imagePreview');
+  for(const file of e.target.files){
+    if(file.type.startsWith('image/')){
+      const compressed=await compressImage(file);
+      uploadedImages.push(compressed);
+      const item=document.createElement('div');
+      item.className='img-preview-item';
+      item.innerHTML=`<img src="${compressed}"><button class="img-remove" onclick="removeImage(${uploadedImages.length-1})">×</button>`;
+      grid.appendChild(item);
+    }
+  }
+}
+function removeImage(idx){
+  uploadedImages.splice(idx,1);
+  const grid=document.getElementById('imagePreview');
+  grid.innerHTML='';
+  uploadedImages.forEach((d,i)=>{
+    const item=document.createElement('div');
+    item.className='img-preview-item';
+    item.innerHTML=`<img src="${d}"><button class="img-remove" onclick="removeImage(${i})">×</button>`;
+    grid.appendChild(item);
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// PDF
+// ══════════════════════════════════════════════════════
+function sharePDF(){ if(lastViolation) generatePDF(lastViolation); }
+function sharePDFByIndex(ref){
+  const v=violations.find(x=>x.refNumber===ref);
+  if(v) generatePDF(v);
+}
+
+async function generatePDF(violation){
+  if(!violation){showToast('لا توجد مخالفة','error');return;}
+  showToast('⏳ جاري إنشاء PDF ...');
+
+  const mapsLink = violation.location
+    ? `https://www.google.com/maps?q=${violation.location.lat},${violation.location.lng}` : null;
+  const statusStyles = {
+    approved:'background:#0d3326;border:1px solid #10b981;color:#34d399;',
+    rejected :'background:#2d1212;border:1px solid #ef4444;color:#f87171;',
+    pending  :'background:#2a1f00;border:1px solid #f59e0b;color:#fbbf24;'
+  };
+  const statusText = { approved:'✓ موافق عليها', rejected:'✕ مرفوضة', pending:'⏳ قيد المراجعة' };
+
+  // تكرار المخالف
+  const rr = getRepeatInfo(violation);
+  const repeatNotes = [];
+  if (rr.plate.length)   repeatNotes.push(`لوحة ${violation.vehiclePlate}: ${rr.plate.length} مرة`);
+  if (rr.id.length)      repeatNotes.push(`هوية ${violation.violatorId}: ${rr.id.length} مرة`);
+
+
+  // صور المخالفة (حتى 4 صور)
+  const imgs = (violation.images || []).slice(0, 6);
+
+  // قائمة الحقول
+  const fields = [
+    ['نوع المخالفة',    violation.mainViolationTypeLabel],
+    ['تفاصيل المخالفة', violation.subViolationType],
+    ['نوع التصريح',     violation.permitType],
+    ['المنطقة',         violation.zone],
+    ['المجموعة',        violation.receivingGroup||'—'],
+    ['الشفت',           violation.shift],
+    ['وقت المخالفة',    violation.violationTime],
+    ['الشركة',          violation.companyName],
+    ['رقم الهوية',      violation.violatorId],
+    ['رقم الجوال',      violation.violatorPhone],
+    ['لوحة المركبة',    violation.vehiclePlate||'—'],
+    ...(violation.personCount ? [['عدد الأشخاص', violation.personCount]] : []),
+    ['المفتش',          violation.inspector],
+    ['الرقم الوظيفي',   violation.inspectorId],
+    ['تاريخ التسجيل',   violation.date],
+    ['وقت التسجيل',     violation.time],
+  ];
+
+  const el = document.createElement('div');
+  // A4 width = 794px at 96dpi. تصميم ضمن هذا العرض.
+  el.style.cssText = [
+    'position:fixed','left:-9999px','top:0',
+    'width:794px','padding:20px 24px',
+    'background:#070e1c',
+    'font-family:Arial,Helvetica,sans-serif',
+    'color:#dde4f0','direction:rtl',
+    'box-sizing:border-box'
+  ].join(';');
+
+  el.innerHTML = `
+  <div style="border:1.5px solid #d4af37;border-radius:10px;padding:14px;box-sizing:border-box;">
+
+    <!-- ═══ HEADER ═══ -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px;">
+      <div>
+        <div style="font-size:19px;font-weight:900;color:#ffd700;line-height:1;">تقرير مخالفة</div>
+        <div style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:2px;">Violation Report — Qiddiya Project</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="background:rgba(212,175,55,0.15);border:1px solid #d4af37;border-radius:6px;padding:5px 16px;display:inline-block;">
+          <span style="color:#ffd700;font-size:16px;font-weight:900;letter-spacing:2px;">${violation.refNumber}</span>
+        </div>
+        <div style="margin-top:4px;">
+          <span style="padding:3px 10px;border-radius:12px;font-size:10px;font-weight:700;${statusStyles[violation.status]||statusStyles.pending}">
+            ${statusText[violation.status]||statusText.pending}
+          </span>
+        </div>
+      </div>
+      <div style="font-size:24px;">⚠️</div>
+    </div>
+
+    <div style="height:1px;background:linear-gradient(90deg,transparent,#d4af37,transparent);margin-bottom:10px;"></div>
+
+    <!-- ═══ FIELDS GRID ═══ -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px;">
+      ${fields.map(([lbl,val])=>`
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(212,175,55,0.18);border-radius:6px;padding:6px 8px;">
+          <div style="color:#d4af37;font-size:9px;font-weight:700;margin-bottom:2px;">${lbl}</div>
+          <div style="color:#fff;font-size:11px;font-weight:600;word-break:break-word;">${val||'—'}</div>
+        </div>`).join('')}
+
+      ${mapsLink ? `
+        <div style="grid-column:1/-1;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:6px;padding:5px 7px;">
+          <div style="color:#d4af37;font-size:8px;font-weight:700;margin-bottom:1px;">📍 رابط الموقع</div>
+          <div style="color:#34d399;font-size:9px;word-break:break-all;">${mapsLink}</div>
+        </div>` : ''}
+
+      ${repeatNotes.length ? `
+        <div style="grid-column:1/-1;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.35);border-radius:6px;padding:5px 7px;">
+          <div style="color:#f87171;font-size:8px;font-weight:900;margin-bottom:2px;">⚠️ مخالف متكرر</div>
+          <div style="color:#fca5a5;font-size:9px;">${repeatNotes.join(' &nbsp;|&nbsp; ')}</div>
+        </div>` : ''}
+    </div>
+
+    <!-- ═══ صور المخالفة ═══ -->
+    ${imgs.length ? `
+    <div style="margin-bottom:10px;">
+      <div style="font-size:9px;font-weight:700;color:#d4af37;margin-bottom:5px;border-right:3px solid #d4af37;padding-right:6px;">📸 صور المخالفة (${imgs.length})</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+        ${imgs.map((src,i)=>`
+          <div style="position:relative;">
+            <img src="${src}" style="width:100%;height:120px;object-fit:cover;border-radius:5px;border:1px solid rgba(212,175,55,0.35);display:block;">
+            <div style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,0.65);color:#d4af37;font-size:7px;padding:1px 5px;border-radius:3px;">صورة ${i+1}</div>
+          </div>`
+        ).join('')}
+      </div>
+    </div>` : '<div style="margin-bottom:10px;padding:8px;background:rgba(239,68,68,0.08);border:1px dashed rgba(239,68,68,0.3);border-radius:6px;text-align:center;color:#f87171;font-size:9px;">⚠️ لم يتم رفع صور للمخالفة</div>'}
+
+    <!-- ═══ بيانات المراجعة ═══ -->
+    ${violation.reviewedBy ? `
+    <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.25);border-radius:6px;padding:7px 10px;margin-bottom:10px;">
+      <div style="color:#86efac;font-weight:700;font-size:10px;margin-bottom:4px;">✅ بيانات المراجعة</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;font-size:9px;">
+        <div><span style="color:#d4af37;">المشرف: </span>${violation.reviewedBy}</div>
+        <div><span style="color:#d4af37;">الرقم: </span>${violation.reviewerId}</div>
+        <div><span style="color:#d4af37;">التاريخ: </span>${violation.reviewDate}</div>
+        <div><span style="color:#d4af37;">الوقت: </span>${violation.reviewTime}</div>
+        ${violation.reviewNotes ? `<div style="grid-column:1/-1;"><span style="color:#d4af37;">الملاحظات: </span>${violation.reviewNotes}</div>` : ''}
+      </div>
+    </div>` : ''}
+
+    <!-- ═══ إقرار بصحة المخالفة ═══ -->
+    <div style="border:1.5px solid #d4af37;border-radius:8px;padding:10px;background:rgba(212,175,55,0.03);">
+      <div style="text-align:center;font-size:12px;font-weight:900;color:#ffd700;margin-bottom:6px;">📜 إقرار بصحة المخالفة</div>
+      <div style="font-size:9.5px;color:#cbd5e1;line-height:1.6;margin-bottom:8px;text-align:justify;">
+        نُقِرّ نحن الموقّعون أدناه بأن المعلومات الواردة في هذا التقرير صحيحة ودقيقة،
+        وأن المخالفة رقم <span style="color:#ffd700;font-weight:700;">${violation.refNumber}</span>
+        قد رُصِدت وسُجِّلت وفق الإجراءات المعتمدة في نظام مخالفات مشروع القدية،
+        وأننا على علم تام بمضمون هذا التقرير وما يترتب عليه من إجراءات.
+      </div>
+
+      <!-- ثلاثة توقيعات -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+
+        <!-- المفتش -->
+        <div style="border:1px solid rgba(212,175,55,0.4);border-radius:7px;padding:8px;text-align:center;background:rgba(255,255,255,0.02);">
+          <div style="font-size:9px;font-weight:700;color:#d4af37;margin-bottom:3px;">👮 المفتش</div>
+          <div style="font-size:10px;color:#fff;font-weight:700;margin-bottom:1px;">${violation.inspector||'—'}</div>
+          <div style="font-size:8.5px;color:rgba(255,255,255,0.45);margin-bottom:3px;">رقم: ${violation.inspectorId||'—'}</div>
+          <div style="font-size:8px;color:rgba(255,255,255,0.3);margin-bottom:2px;">التاريخ: ${violation.date}</div>
+          <div style="border-top:1px dashed rgba(212,175,55,0.4);margin-top:10px;padding-top:5px;">
+            <div style="font-size:7.5px;color:rgba(255,255,255,0.3);">التوقيع</div>
+            <div style="height:22px;border-bottom:1px solid rgba(255,255,255,0.15);margin-top:4px;"></div>
+          </div>
+        </div>
+
+        <!-- المشرف -->
+        <div style="border:1px solid rgba(212,175,55,0.4);border-radius:7px;padding:8px;text-align:center;background:rgba(255,255,255,0.02);">
+          <div style="font-size:9px;font-weight:700;color:#d4af37;margin-bottom:3px;">👔 المشرف المباشر</div>
+          <div style="font-size:10px;color:#fff;font-weight:700;margin-bottom:1px;">${violation.reviewedBy||'.............................'}</div>
+          <div style="font-size:8.5px;color:rgba(255,255,255,0.45);margin-bottom:3px;">رقم: ${violation.reviewerId||'...............'}</div>
+          <div style="font-size:8px;color:rgba(255,255,255,0.3);margin-bottom:2px;">التاريخ: ${violation.reviewDate||'.............'}</div>
+          <div style="border-top:1px dashed rgba(212,175,55,0.4);margin-top:10px;padding-top:5px;">
+            <div style="font-size:7.5px;color:rgba(255,255,255,0.3);">التوقيع</div>
+            <div style="height:22px;border-bottom:1px solid rgba(255,255,255,0.15);margin-top:4px;"></div>
+          </div>
+        </div>
+
+        <!-- ممثل الشركة -->
+        <div style="border:1px solid rgba(212,175,55,0.4);border-radius:7px;padding:8px;text-align:center;background:rgba(255,255,255,0.02);">
+          <div style="font-size:9px;font-weight:700;color:#d4af37;margin-bottom:3px;">🏢 ممثل الشركة</div>
+          <div style="font-size:10px;color:#fff;font-weight:700;margin-bottom:1px;">${violation.companyName||'.............................'}</div>
+          <div style="font-size:8.5px;color:rgba(255,255,255,0.45);margin-bottom:3px;">الاسم: .............................</div>
+          <div style="font-size:8px;color:rgba(255,255,255,0.3);margin-bottom:2px;">التاريخ: ...................</div>
+          <div style="border-top:1px dashed rgba(212,175,55,0.4);margin-top:10px;padding-top:5px;">
+            <div style="font-size:7.5px;color:rgba(255,255,255,0.3);">التوقيع</div>
+            <div style="height:22px;border-bottom:1px solid rgba(255,255,255,0.15);margin-top:4px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="margin-top:8px;text-align:center;color:rgba(255,255,255,0.25);font-size:8px;">
+      نظام مخالفات القدية — Qiddiya Violations System &nbsp;|&nbsp; طُبع بتاريخ: ${new Date().toLocaleDateString('ar-SA')}
+    </div>
+  </div>`;
+
+  document.body.appendChild(el);
+  try {
+    const canvas = await html2canvas(el, {
+      scale: 2, useCORS: true, allowTaint: true,
+      backgroundColor: '#070e1c', logging: false
+    });
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageW = 210, pageH = 297;
+    const margin = 5;
+    const usableW = pageW - (margin * 2);
+    const usableH = pageH - (margin * 2);
+
+    const imgW = canvas.width;
+    const imgH = canvas.height;
+    const contentH = (imgH / imgW) * usableW;
+
+    if (contentH <= usableH) {
+      // يتناسب مع صفحة واحدة A4
+      doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', margin, margin, usableW, contentH);
+    } else {
+      // تقسيم على عدة صفحات A4
+      const totalPages = Math.ceil(contentH / usableH);
+      for (let page = 0; page < totalPages; page++) {
+        if (page > 0) doc.addPage();
+        const srcY = Math.round((page * usableH / contentH) * imgH);
+        const srcH = Math.round((usableH / contentH) * imgH);
+        const actualSrcH = Math.min(srcH, imgH - srcY);
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = imgW;
+        pageCanvas.height = actualSrcH;
+        const ctx = pageCanvas.getContext('2d');
+        ctx.drawImage(canvas, 0, srcY, imgW, actualSrcH, 0, 0, imgW, actualSrcH);
+        const pageContentH = (actualSrcH / imgW) * usableW;
+        doc.addImage(pageCanvas.toDataURL('image/jpeg', 0.92), 'JPEG', margin, margin, usableW, pageContentH);
+      }
+    }
+
+    const fileName = `violation_${violation.refNumber}.pdf`;
+
+    // محاولة المشاركة عبر Web Share API (للجوال)
+    if (navigator.share && navigator.canShare) {
+      try {
+        const pdfBlob = doc.output('blob');
+        const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: `تقرير مخالفة ${violation.refNumber}`,
+            text: `تقرير مخالفة رقم ${violation.refNumber} — نظام القدية`,
+            files: [file]
+          });
+          showToast('✅ تمت المشاركة بنجاح!');
+          return;
+        }
+      } catch(shareErr) {
+        if (shareErr.name !== 'AbortError') {
+          console.warn('Share failed, falling back to save:', shareErr);
+        } else {
+          // المستخدم ألغى المشاركة
+          showToast('ℹ️ تم إلغاء المشاركة');
+          return;
+        }
+      }
+    }
+
+    // إذا المشاركة غير متاحة — تنزيل مباشر
+    doc.save(fileName);
+    showToast('✅ تم تحميل PDF بمقاس A4!');
+  } catch(err) {
+    console.error(err);
+    showToast('❌ خطأ في إنشاء PDF','error');
+  } finally {
+    document.body.removeChild(el);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// ADMIN PANEL
+// ══════════════════════════════════════════════════════
+function renderAdminPanel() {
+  if (!currentUser || currentUser.role !== 'admin') return;
+  const cont = document.getElementById('adminPanelContent');
+  if (!cont) return;
+
+  const total    = violations.length;
+  const pending  = violations.filter(v=>v.status==='pending').length;
+  const approved = violations.filter(v=>v.status==='approved').length;
+  const rejected = violations.filter(v=>v.status==='rejected').length;
+
+  // ── تحليل المكررين (لوحة وهوية فقط) ──
+  const plateMap = {}, idMap = {};
+  violations.forEach(v => {
+    if (v.vehiclePlate) { const k=v.vehiclePlate.trim().toUpperCase(); if(k){ plateMap[k]=(plateMap[k]||[]).concat(v); } }
+    if (v.violatorId)   { const k=v.violatorId.trim(); if(k){ idMap[k]=(idMap[k]||[]).concat(v); } }
+  });
+  const repeatPlates = Object.entries(plateMap).filter(([,arr])=>arr.length>1).sort((a,b)=>b[1].length-a[1].length);
+  const repeatIds    = Object.entries(idMap).filter(([,arr])=>arr.length>1).sort((a,b)=>b[1].length-a[1].length);
+
+  // إحصائيات المفتشين
+  const inspMap = {};
+  violations.forEach(v=>{ inspMap[v.inspector]=(inspMap[v.inspector]||0)+1; });
+  const topInsp = Object.entries(inspMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+
+  // إحصائيات المجموعات
+  const groupMap = {};
+  violations.forEach(v=>{ const g=v.receivingGroup||'غير محدد'; groupMap[g]=(groupMap[g]||0)+1; });
+
+  // قائمة المفتشين
+  const allInspList = Object.entries(allUsers)
+    .filter(([id,u])=>u.role==='employee')
+    .sort((a,b)=>a[1].name.localeCompare(b[1].name));
+
+  // آخر 20 مخالفة
+  const recent = [...violations].sort((a,b)=>new Date(b.date+' '+b.time)-new Date(a.date+' '+a.time)).slice(0,20);
+
+  cont.innerHTML = `
+    <!-- KPI Cards -->
+    <div class="stats-row" style="margin-bottom:24px;">
+      <div class="stat-card gold"><div class="stat-icon">📋</div><div class="stat-value">${total}</div><div class="stat-label">إجمالي المخالفات</div></div>
+      <div class="stat-card amber"><div class="stat-icon">⏳</div><div class="stat-value">${pending}</div><div class="stat-label">قيد المراجعة</div></div>
+      <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-value">${approved}</div><div class="stat-label">موافق عليها</div></div>
+      <div class="stat-card red"><div class="stat-icon">❌</div><div class="stat-value">${rejected}</div><div class="stat-label">مرفوضة</div></div>
+      <div class="stat-card blue"><div class="stat-icon">👮</div><div class="stat-value">${allInspList.length}</div><div class="stat-label">إجمالي المفتشين</div></div>
+      <div class="stat-card" style="border-color:rgba(239,68,68,0.35);">
+        <div class="stat-icon" style="font-size:28px;">🔁</div>
+        <div class="stat-value" style="color:#f87171;">${repeatPlates.length + repeatIds.length}</div>
+        <div class="stat-label">لوحات وهويات متكررة</div>
+      </div>
+    </div>
+
+    <!-- ════ قسم المخالفين المتكررين ════ -->
+    <div class="card" style="margin-bottom:20px;border-color:rgba(239,68,68,0.4);">
+      <div class="card-header" style="background:rgba(239,68,68,0.06);">
+        <h3 style="color:#f87171;">🔁 المخالفون المتكررون</h3>
+      </div>
+      <div class="card-body">
+
+        <!-- مكرر بالهوية -->
+        <div style="margin-bottom:18px;">
+          <div style="font-size:13px;font-weight:700;color:#fbbf24;margin-bottom:10px;">🪪 مكرر بالهوية / الإقامة (${repeatIds.length} شخص)</div>
+          ${repeatIds.length ? `
+          <div style="overflow-x:auto;">
+          <table class="report-table" style="min-width:600px;">
+            <thead><tr><th>رقم الهوية</th><th>الاسم / الشركة</th><th style="text-align:center;">عدد المخالفات</th><th>التواريخ</th></tr></thead>
+            <tbody>
+              ${repeatIds.slice(0,15).map(([id,arr])=>`
+                <tr>
+                  <td style="font-family:monospace;color:#fbbf24;">${id}</td>
+                  <td>${[...new Set(arr.map(x=>x.companyName))].join('، ')}</td>
+                  <td style="text-align:center;"><span class="repeat-count-badge">${arr.length}x</span></td>
+                  <td style="font-size:11px;color:var(--muted);">${arr.map(x=>x.date).join(' | ')}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+          </div>` : '<div style="color:var(--muted);padding:12px;">لا يوجد</div>'}
+        </div>
+
+        <!-- مكرر باللوحة -->
+        <div style="margin-bottom:18px;border-top:1px solid var(--border);padding-top:16px;">
+          <div style="font-size:13px;font-weight:700;color:#f87171;margin-bottom:10px;">🚗 مكرر بلوحة المركبة (${repeatPlates.length} لوحة)</div>
+          ${repeatPlates.length ? `
+          <div style="overflow-x:auto;">
+          <table class="report-table" style="min-width:600px;">
+            <thead><tr><th>اللوحة</th><th>الشركة</th><th style="text-align:center;">عدد المخالفات</th><th>التواريخ</th><th>نوع المخالفة</th></tr></thead>
+            <tbody>
+              ${repeatPlates.slice(0,15).map(([plate,arr])=>`
+                <tr>
+                  <td style="font-family:monospace;font-size:15px;font-weight:900;color:#f87171;letter-spacing:3px;">${plate}</td>
+                  <td>${[...new Set(arr.map(x=>x.companyName))].join('، ')}</td>
+                  <td style="text-align:center;"><span class="repeat-count-badge">${arr.length}x</span></td>
+                  <td style="font-size:11px;color:var(--muted);">${arr.map(x=>x.date).join(' | ')}</td>
+                  <td style="font-size:11px;color:var(--muted);">${arr.map(x=>x.mainViolationTypeLabel||x.subViolationType).join(' | ')}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+          </div>` : '<div style="color:var(--muted);padding:12px;">لا يوجد</div>'}
+        </div>
+
+
+
+      </div>
+    </div>
+    <!-- نهاية المخالفين المتكررين -->
+
+    <!-- توزيع المجموعات -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-header"><h3>👥 توزيع المخالفات حسب المجموعة</h3></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;">
+          ${Object.entries(groupMap).map(([g,c])=>`
+            <div style="background:var(--gold-dim);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;">
+              <div style="font-size:11px;color:var(--gold);margin-bottom:6px;">${g}</div>
+              <div style="font-size:26px;font-weight:900;color:#ffd700;">${c}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- أنشط المفتشين -->
+    <div class="charts-grid" style="margin-bottom:20px;">
+      <div class="card">
+        <div class="card-header"><h3>🏆 أنشط المفتشين</h3></div>
+        <div class="card-body">
+          <ul class="top-list">
+            ${topInsp.map(([name,count],i)=>`
+              <li>
+                <div class="top-rank">${i+1}</div>
+                <span class="top-name">${name}</span>
+                <span class="top-count">${count}</span>
+              </li>`).join('')}
+          </ul>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>👮 قائمة المفتشين الكاملة (${allInspList.length})</h3></div>
+        <div class="card-body" style="overflow-x:auto;max-height:320px;overflow-y:auto;">
+          <table class="report-table" style="min-width:400px;">
+            <thead><tr><th>#</th><th>الرقم الوظيفي</th><th>الاسم</th><th>المخالفات</th></tr></thead>
+            <tbody>
+              ${allInspList.map(([id,u],i)=>{
+                const count = violations.filter(v=>v.inspectorId===id).length;
+                return `<tr>
+                  <td>${i+1}</td>
+                  <td style="font-family:monospace;color:var(--gold);">${id}</td>
+                  <td>${u.name}</td>
+                  <td style="text-align:center;"><span style="background:var(--gold-dim);padding:2px 10px;border-radius:20px;color:var(--gold-light);">${count}</span></td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- آخر 20 مخالفة -->
+    <div class="card">
+      <div class="card-header"><h3>🕐 آخر 20 مخالفة مسجلة</h3></div>
+      <div class="card-body" style="overflow-x:auto;">
+        <table class="report-table" style="min-width:800px;">
+          <thead>
+            <tr><th>الرقم</th><th>النوع</th><th>الشركة</th><th>المفتش</th><th>المنطقة</th><th>التاريخ</th><th>الحالة</th><th>مكرر</th><th>PDF</th></tr>
+          </thead>
+          <tbody>
+            ${recent.map(v=>{
+              const stMap={pending:'⏳',approved:'✅',rejected:'❌'};
+              const r = getRepeatInfo(v);
+              const hasRepeat = r.plate.length||r.id.length||r.company.length;
+              const repeatCell = hasRepeat
+                ? `<span class="repeat-count-badge">${(r.plate.length?'🚗':'')+(r.id.length?'🪪':'')+(r.company.length?'🏢':'')}</span>`
+                : '—';
+              return `<tr style="${hasRepeat?'background:rgba(239,68,68,0.04);':''}">
+                <td style="color:var(--gold);font-size:11px;">${v.refNumber}</td>
+                <td>${v.mainViolationTypeLabel||'—'}</td>
+                <td>${v.companyName||'—'}</td>
+                <td>${v.inspector||'—'}</td>
+                <td>${v.zone||'—'}</td>
+                <td>${v.date} ${v.time}</td>
+                <td>${stMap[v.status]||'—'}</td>
+                <td>${repeatCell}</td>
+                <td><button class="btn-sm btn-pdf" onclick="generatePDF(violations.find(x=>x.refNumber==='${v.refNumber}'))">📄</button></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function exportAdminReport() {
+  if (!violations.length) { showToast('لا توجد مخالفات','error'); return; }
+  const data = violations.map((v,i)=>({
+    'م':i+1,'الرقم المرجعي':v.refNumber,
+    'النوع الرئيسي':v.mainViolationTypeLabel,'المخالفة':v.subViolationType,
+    'نوع التصريح':v.permitType,'المنطقة':v.zone,'المجموعة':v.receivingGroup||'—',
+    'الشفت':v.shift,'الوقت':v.violationTime,'الشركة':v.companyName,
+    'رقم الهوية':v.violatorId,'رقم الجوال':v.violatorPhone,
+    'المفتش':v.inspector,'الرقم الوظيفي':v.inspectorId,
+    'التاريخ':v.date,'الساعة':v.time,
+    'الحالة':v.status==='pending'?'قيد المراجعة':v.status==='approved'?'موافق عليها':'مرفوضة',
+    'المشرف':v.reviewedBy||'—','ملاحظات':v.reviewNotes||'—'
+  }));
+  const ws=XLSX.utils.json_to_sheet(data);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'التقرير الشامل');
+  XLSX.writeFile(wb,`ADMIN_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+  showToast(`✅ تم تصدير ${violations.length} مخالفة — Admin Report`);
+}
+
+// ══════════════════════════════════════════════════════
+// GOOGLE SHEETS
+// ══════════════════════════════════════════════════════
+async function sendToGoogleSheets(v){
+  try {
+    if (!GOOGLE_SCRIPT_URL) { console.warn('⚠️ GOOGLE_SCRIPT_URL غير مضبوط'); return; }
+    const statusMap = { approved:'موافق عليها', rejected:'مرفوضة', pending:'قيد المراجعة' };
+
+    // رابط موقع مختصر
+    const locShort = v.location ? `${v.location.lat.toFixed(5)},${v.location.lng.toFixed(5)}` : '-';
+    const locLink = v.location ? `maps.google.com/?q=${locShort}` : '-';
+
+    const payload = {
+      refNumber:         v.refNumber || '-',
+      mainViolationType: v.mainViolationTypeLabel || '-',
+      subViolationType:  v.subViolationType || '-',
+      personCount:       v.personCount || '-',
+      permitType:        v.permitType || '-',
+      zone:              v.zone || '-',
+      receivingGroup:    v.receivingGroup || '-',
+      shift:             v.shift || '-',
+      violationTime:     v.violationTime || '-',
+      companyName:       v.companyName || '-',
+      violatorId:        v.violatorId || '-',
+      violatorPhone:     v.violatorPhone || '-',
+      vehiclePlate:      v.vehiclePlate || '-',
+      locationLink:      locLink,
+      inspector:         v.inspector || '-',
+      inspectorId:       v.inspectorId || '-',
+      date:              v.date || '-',
+      time:              v.time || '-',
+      status:            statusMap[v.status] || 'قيد المراجعة',
+      reviewedBy:        v.reviewedBy || '-',
+      reviewerId:        v.reviewerId || '-',
+      reviewDate:        v.reviewDate || '-',
+      reviewTime:        v.reviewTime || '-',
+      reviewNotes:       v.reviewNotes || '-',
+      images:            (v.images || []).map((b64, i) => ({
+        name: `${v.refNumber}_img${i+1}.jpg`,
+        data: b64.replace(/^data:image\/\w+;base64,/, '')
+      }))
+    };
+
+    console.log('📤 جاري الإرسال إلى Google Sheets مع الصور:', v.refNumber);
+
+    // POST بدون انتظار الرد (no-cors) لتجاوز CORS
+    fetch(GOOGLE_SCRIPT_URL, {
+      method: 'POST',
+      mode:   'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload)
+    })
+    .then(()  => console.log('✅ تم الإرسال بنجاح:', v.refNumber))
+    .catch(err => console.warn('⚠️ تحذير الإرسال (قد يكون ناجحاً):', err));
+
+  } catch(e) {
+    console.error('❌ خطأ في Google Sheets:', e);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// EXCEL EXPORT
+// ══════════════════════════════════════════════════════
+function downloadExcelFile(){
+  let exportList = violations;
+  if (currentUser && currentUser.role === 'supervisor' && currentUser.group) {
+    exportList = exportList.filter(v => v.receivingGroup === currentUser.group);
+  }
+  if(!exportList.length){showToast('لا توجد مخالفات للتصدير','error');return;}
+  const data=exportList.map((v,i)=>({
+    'م':i+1,'الرقم المرجعي':v.refNumber,
+    'النوع الرئيسي':v.mainViolationTypeLabel,'المخالفة':v.subViolationType,
+    'عدد الأشخاص':v.personCount||'—','نوع التصريح':v.permitType,
+    'المنطقة':v.zone,'المجموعة المستلمة':v.receivingGroup||'—',
+    'الشفت':v.shift,'الوقت':v.violationTime,
+    'الشركة':v.companyName,'رقم الهوية':v.violatorId,
+    'رقم الجوال':v.violatorPhone,'لوحة المركبة':v.vehiclePlate||'—',
+    'رابط الموقع':v.location?`https://www.google.com/maps?q=${v.location.lat},${v.location.lng}`:'—',
+    'المفتش':v.inspector,'الرقم الوظيفي':v.inspectorId,
+    'التاريخ':v.date,'الساعة':v.time,
+    'الحالة':v.status==='pending'?'قيد المراجعة':v.status==='approved'?'موافق عليها':'مرفوضة',
+    'المشرف':v.reviewedBy||'—','رقم المشرف':v.reviewerId||'—',
+    'تاريخ المراجعة':v.reviewDate||'—','وقت المراجعة':v.reviewTime||'—',
+    'ملاحظات المشرف':v.reviewNotes||'—'
+  }));
+  const ws=XLSX.utils.json_to_sheet(data);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'المخالفات');
+  XLSX.writeFile(wb,`مخالفات_القدية_${new Date().toISOString().split('T')[0]}.xlsx`);
+  showToast(`✅ تم تصدير ${violations.length} مخالفة!`);
+}
+
+// ══════════════════════════════════════════════════════
+// THEME TOGGLE
+// ══════════════════════════════════════════════════════
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light-mode');
+  const icon  = document.getElementById('themeIcon');
+  const label = document.getElementById('themeLabel');
+  if (isLight) {
+    icon.textContent  = '🌙';
+    label.textContent = 'ليلي';
+  } else {
+    icon.textContent  = '☀️';
+    label.textContent = 'نهاري';
+  }
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+}
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+window.onload = () => {
+  loadFromStorage();
+  // استعادة الثيم المحفوظ
+  if (localStorage.getItem('theme') === 'light') {
+    document.body.classList.add('light-mode');
+    document.getElementById('themeIcon').textContent  = '🌙';
+    document.getElementById('themeLabel').textContent = 'ليلي';
+  }
+};
+document.addEventListener('keypress', e => {
+  if (e.key === 'Enter' && document.getElementById('mainApp').classList.contains('hide')) login();
+});
+</script>
+</body>
+</html>
